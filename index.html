@@ -6,31 +6,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="FamCall" />
+  <meta name="apple-mobile-web-app-title" content="FamCall HUD" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#050914" />
-  <title>FamCall — Dark Spatial Glass HUD</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23050914'/%3E%3Cstop offset='55%25' stop-color='%230a1e3d'/%3E%3Cstop offset='100%25' stop-color='%230284c7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='28' fill='url(%23g)'/%3E%3Crect x='4' y='4' width='112' height='112' rx='24' fill='none' stroke='%2338bdf8' stroke-opacity='0.5' stroke-width='2.5'/%3E%3Cpath d='M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z' fill='none' stroke='%23e0f2fe' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z' fill='%2338bdf8' fill-opacity='0.32' stroke='%2338bdf8' stroke-width='3.2'/%3E%3C/svg%3E" />
+  <title>FamCall HUD — Family Connect</title>
 
-  <!-- PeerJS (deferred so UI renders immediately without blocking) -->
+  <!-- PeerJS (deferred so UI renders immediately even offline) -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
 
-  <!-- Clean HUD Typography -->
+  <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
 
   <style>
     /* =====================================================================
-       1. DESIGN TOKENS & RESET (PURE VANILLA CSS — ZERO CDN CONFLICTS)
+       1. CRITICAL VISIBILITY & LAYER ISOLATION (TOP OF STYLESHEET)
+       ===================================================================== */
+    .hidden, input[type="file"] { display: none !important; }
+    .screen-layer { position: fixed; inset: 0; z-index: 60; display: none; flex-direction: column; background: var(--bg-deep); overflow: hidden; }
+    .screen-layer.active { display: flex; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(2,6,16,0.78); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .modal-backdrop.active { display: flex; }
+    .call-layer { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; background: radial-gradient(circle at 50% 25%, #0c1f3d 0%, #050914 70%); }
+    .call-layer.active { display: flex; }
+
+    /* =====================================================================
+       2. DESIGN TOKENS & RESET
        ===================================================================== */
     :root {
       --bg-obsidian: #050914;
-      --bg-deep: #0a1224;
+      --bg-deep: #070e1f;
       --surface-glass: rgba(15, 23, 42, 0.62);
       --surface-strong: rgba(8, 15, 30, 0.9);
       --border-subtle: rgba(148, 163, 184, 0.18);
-      --border-cyan: rgba(56, 189, 248, 0.35);
-      --border-cyan-hi: rgba(56, 189, 248, 0.65);
+      --border-cyan: rgba(56, 189, 248, 0.36);
+      --border-cyan-hi: rgba(56, 189, 248, 0.7);
       --cyan: #38bdf8;
       --cyan-deep: #0284c7;
       --emerald: #10b981;
@@ -40,9 +54,6 @@
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --radius-lg: 20px;
-      --radius-md: 14px;
-      --radius-sm: 10px;
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
     }
@@ -77,49 +88,24 @@
       padding: 0;
     }
 
+    .mono { font-family: var(--font-mono); }
+
     /* =====================================================================
-       2. OUTER STAGE & FIXED 100DVH APP SHELL
+       3. AMBIENT SPATIAL BACKGROUND & GLASS SURFACES
        ===================================================================== */
-    .stage {
-      width: 100%;
-      height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .hud-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
       background:
-        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.14) 0%, transparent 46%),
-        radial-gradient(circle at 82% 88%, rgba(16, 185, 129, 0.12) 0%, transparent 46%),
-        #02050d;
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
+        radial-gradient(circle at 82% 88%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
+        linear-gradient(165deg, #050914 0%, #091428 55%, #040812 100%);
     }
 
-    #app-shell {
-      position: relative;
-      width: 100%;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: linear-gradient(165deg, var(--bg-obsidian) 0%, var(--bg-deep) 55%, #040812 100%);
-      padding-top: env(safe-area-inset-top, 0px);
-    }
-
-    @media (min-width: 500px) {
-      #app-shell {
-        width: 430px;
-        max-width: 430px;
-        height: min(860px, 94vh);
-        border-radius: 34px;
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        box-shadow:
-          0 0 0 1px rgba(56, 189, 248, 0.08),
-          0 32px 90px rgba(0, 0, 0, 0.9),
-          0 0 42px rgba(56, 189, 248, 0.12);
-      }
-    }
-
-    /* Ambient Spatial Grid & Glows */
     .hud-grid {
-      position: absolute;
+      position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 0;
@@ -131,26 +117,6 @@
       -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 35%, transparent 95%);
     }
 
-    .hud-glow {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.35;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .hud-glow-blue {
-      width: 240px; height: 240px; top: -80px; right: -70px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.75), transparent 70%);
-    }
-    .hud-glow-emerald {
-      width: 220px; height: 220px; bottom: -70px; left: -70px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.55), transparent 70%);
-    }
-
-    /* =====================================================================
-       3. GLASS SURFACES, BUTTONS & INPUTS
-       ===================================================================== */
     .glass {
       background: var(--surface-glass);
       backdrop-filter: blur(18px) saturate(140%);
@@ -163,7 +129,7 @@
       background: var(--surface-strong);
       backdrop-filter: blur(22px) saturate(150%);
       -webkit-backdrop-filter: blur(22px) saturate(150%);
-      border: 1px solid rgba(56, 189, 248, 0.22);
+      border: 1px solid rgba(56, 189, 248, 0.24);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 14px 36px rgba(0, 0, 0, 0.55);
     }
 
@@ -185,18 +151,21 @@
       color: #fff;
       box-shadow: 0 0 16px rgba(14, 165, 233, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.28);
     }
+
     .btn-emerald {
       background: linear-gradient(135deg, var(--emerald), var(--emerald-deep));
       border: 1px solid rgba(110, 231, 183, 0.48);
       color: #fff;
       box-shadow: 0 0 14px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     }
+
     .btn-rose {
       background: linear-gradient(135deg, var(--rose), var(--rose-deep));
       border: 1px solid rgba(252, 165, 165, 0.45);
       color: #fff;
       box-shadow: 0 0 14px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
+
     .btn-ghost {
       background: rgba(15, 23, 42, 0.72);
       border: 1px solid var(--border-subtle);
@@ -225,40 +194,53 @@
     }
     .hud-input::placeholder { color: var(--text-muted); }
 
-    .mono { font-family: var(--font-mono); }
-
-    /* =====================================================================
-       4. MAIN WORKSPACE (STRICT 3-PART FLEX LAYOUT)
-       ===================================================================== */
-    #main-workspace {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    /* Fixed Top Header */
-    .app-header {
+    .brand-icon-svg {
+      width: 28px;
+      height: 28px;
       flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 16px;
-      background: rgba(5, 9, 20, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45));
     }
 
-    .header-left {
-      display: flex;
+    .brand-icon-lg {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+    }
+
+    .status-pill {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-      min-width: 0;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+    }
+    .status-dot.online { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+    .status-dot.offline { background: var(--rose); }
+
+    .id-chip {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      padding: 3px 9px;
+      border-radius: 8px;
     }
 
     .avatar-btn {
@@ -267,8 +249,8 @@
     }
 
     .avatar-circle {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       overflow: hidden;
       background: #0f172a;
@@ -277,7 +259,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--cyan);
     }
     .avatar-circle img {
@@ -291,8 +273,8 @@
       position: absolute;
       bottom: -2px;
       right: -2px;
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: #0ea5e9;
       border: 1.5px solid var(--bg-obsidian);
@@ -302,75 +284,87 @@
       color: #fff;
     }
 
-    .brand-row {
+    /* =====================================================================
+       4. MAIN APP SHELL (#app-shell)
+       ===================================================================== */
+    #app-shell {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .app-header {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
+      padding: 10px 14px;
+      background: rgba(5, 9, 20, 0.78);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.16);
     }
-    .brand-title {
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .header-title-wrap {
+      min-width: 0;
+    }
+
+    .header-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-name {
       margin: 0;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #fff;
+      white-space: nowrap;
     }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      color: #cbd5e1;
-    }
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--cyan);
-    }
-    .status-dot.online { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
-    .status-dot.offline { background: var(--rose); }
 
     .header-sub {
-      margin: 2px 0 0;
+      margin: 1px 0 0;
       font-family: var(--font-mono);
-      font-size: 11px;
-      color: rgba(56, 189, 248, 0.9);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 10px;
+      color: rgba(56, 189, 248, 0.85);
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       flex-shrink: 0;
     }
-    .btn-install-sm {
-      padding: 7px 11px;
-      border-radius: 999px;
-      font-size: 11px;
-    }
+
     .btn-icon-sq {
       width: 34px;
       height: 34px;
       border-radius: 50%;
     }
 
-    /* Scrollable Main Content */
     .app-main {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 14px 16px 20px;
+      padding: 14px 14px 20px;
     }
     .app-main::-webkit-scrollbar { display: none; }
 
@@ -383,13 +377,12 @@
       display: flex;
     }
 
-    /* Fixed Bottom Navigation */
     .app-nav {
       flex-shrink: 0;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
-      padding: 8px 12px max(10px, env(safe-area-inset-bottom));
+      padding: 8px 10px max(10px, env(safe-area-inset-bottom));
       background: rgba(6, 11, 24, 0.92);
       backdrop-filter: blur(22px);
       -webkit-backdrop-filter: blur(22px);
@@ -412,15 +405,16 @@
       transition: all 0.16s ease;
     }
     .nav-btn.active {
-      background: rgba(56, 189, 248, 0.15);
-      border-color: rgba(56, 189, 248, 0.38);
+      background: rgba(56, 189, 248, 0.16);
+      border-color: rgba(56, 189, 248, 0.4);
       color: var(--cyan);
       box-shadow: 0 0 14px rgba(56, 189, 248, 0.16);
     }
+
     .nav-badge {
       position: absolute;
       top: 4px;
-      right: 14px;
+      right: 12px;
       min-width: 16px;
       height: 16px;
       padding: 0 4px;
@@ -437,7 +431,7 @@
     .nav-badge.show { display: inline-flex; }
 
     /* =====================================================================
-       5. CARDS, FILTERS & LIST ITEMS
+       5. CARDS, LISTS & FORMS
        ===================================================================== */
     .search-box {
       display: flex;
@@ -456,25 +450,71 @@
     }
     .search-box input::placeholder { color: var(--text-muted); }
 
-    .filter-row {
+    .section-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      padding: 0 2px;
     }
-    .filter-group {
-      display: flex;
-      gap: 6px;
-    }
-    .filter-pill {
-      padding: 6px 12px;
-      border-radius: 10px;
+    .section-title {
+      margin: 0;
       font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+    .count-chip {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 7px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--cyan);
     }
 
+    .panel-card {
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .empty-state {
+      border-radius: 20px;
+      padding: 28px 18px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .row-between {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .inline-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .inline-form .hud-input { flex: 1; min-width: 0; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* HUD Contact Card */
     .contact-card {
-      border-radius: var(--radius-lg);
+      border-radius: 20px;
       padding: 14px;
       display: flex;
       flex-direction: column;
@@ -484,25 +524,28 @@
     }
     .contact-card:hover {
       border-color: var(--border-cyan);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 20px rgba(56, 189, 248, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 20px rgba(56, 189, 248, 0.14);
     }
 
     .card-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
     }
+
     .card-user {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
       min-width: 0;
     }
+
     .card-avatar-wrap {
       position: relative;
       flex-shrink: 0;
     }
+
     .card-avatar {
       width: 48px;
       height: 48px;
@@ -518,8 +561,8 @@
       color: var(--cyan);
     }
     .card-avatar.online {
-      border-color: rgba(16, 185, 129, 0.75);
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.8);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.28);
     }
     .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -563,16 +606,7 @@
       gap: 4px;
       flex-shrink: 0;
     }
-    .id-chip {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--cyan);
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.22);
-      padding: 2px 7px;
-      border-radius: 7px;
-    }
+
     .unread-pill {
       font-family: var(--font-mono);
       font-size: 10px;
@@ -582,6 +616,7 @@
       padding: 1px 7px;
       border-radius: 999px;
     }
+
     .time-text { font-size: 10px; color: var(--text-muted); }
 
     .card-preview {
@@ -591,6 +626,20 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .signal-bar-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.16);
+      overflow: hidden;
+    }
+    .signal-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0ea5e9, #10b981);
+      transition: width 0.3s ease;
     }
 
     .card-actions {
@@ -605,106 +654,145 @@
       border-radius: 10px;
     }
 
-    .section-head {
+    /* =====================================================================
+       6. SETUP SCREEN & REDESIGNED AUTO-FIT LOCK SCREEN
+       ===================================================================== */
+    #setup-screen {
+      padding: max(16px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
+      justify-content: space-between;
+      overflow-y: auto;
+      background: linear-gradient(165deg, #050914 0%, #0a1428 55%, #040812 100%);
+    }
+
+    #lock-screen {
+      height: 100dvh;
+      padding: max(14px, env(safe-area-inset-top)) clamp(16px, 4vw, 24px) max(14px, env(safe-area-inset-bottom));
+      justify-content: space-between;
+      gap: clamp(8px, 1.4dvh, 14px);
+      background:
+        radial-gradient(circle at 50% 22%, rgba(56, 189, 248, 0.16) 0%, transparent 48%),
+        linear-gradient(165deg, #050914 0%, #0a1428 55%, #040812 100%);
+    }
+
+    .lock-top-bar {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 2px;
-    }
-    .section-title {
-      margin: 0;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-secondary);
-    }
-    .count-chip {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 7px;
-      background: rgba(56, 189, 248, 0.14);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: var(--cyan);
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
     }
 
-    .panel-card {
-      border-radius: var(--radius-lg);
-      padding: 16px;
+    .lock-center {
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
     }
 
-    .empty-state {
-      border-radius: var(--radius-lg);
-      padding: 26px 18px;
+    #lock-avatar {
+      width: clamp(110px, 16dvh, 150px);
+      height: clamp(110px, 16dvh, 150px);
+      font-size: clamp(42px, 6.2dvh, 60px);
+      border: 2px solid rgba(56, 189, 248, 0.8);
+      box-shadow:
+        0 0 0 6px rgba(56, 189, 248, 0.14),
+        0 0 36px rgba(56, 189, 248, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      margin-bottom: clamp(8px, 1.4dvh, 14px);
+      flex-shrink: 0;
+    }
+
+    #lock-name {
+      margin: 0;
+      font-size: clamp(22px, 3.2dvh, 28px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      line-height: 1.15;
       text-align: center;
-      font-size: 12px;
+    }
+
+    #lock-id {
+      margin-top: clamp(4px, 0.8dvh, 8px);
+    }
+
+    #pin-msg {
+      margin: clamp(8px, 1.2dvh, 12px) 0 0;
+      font-size: clamp(11px, 1.5dvh, 13px);
       color: var(--text-secondary);
-      line-height: 1.5;
+      text-align: center;
     }
 
-    .row-between {
+    .pin-dots {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      justify-content: center;
+      gap: clamp(16px, 4vw, 22px);
+      margin: clamp(10px, 1.6dvh, 16px) 0;
     }
-    .inline-form {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .inline-form .hud-input { flex: 1; min-width: 0; }
 
-    .grid-2 {
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.8px solid rgba(56, 189, 248, 0.55);
+      background: rgba(15, 23, 42, 0.72);
+      transition: all 0.16s ease;
+    }
+    .pin-dot.filled {
+      background: var(--cyan);
+      border-color: #bae6fd;
+      transform: scale(1.15);
+      box-shadow: 0 0 14px var(--cyan), 0 0 24px rgba(56, 189, 248, 0.55);
+    }
+
+    .pin-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(10px, 1.8dvh, 16px);
+      width: min(92vw, 390px);
+      padding: clamp(12px, 2dvh, 18px);
+      border-radius: 26px;
+    }
+
+    .pin-key {
+      height: clamp(54px, 8.2dvh, 72px);
+      border-radius: 18px;
+      font-family: var(--font-mono);
+      font-size: clamp(22px, 3.2dvh, 28px);
+      font-weight: 700;
+      background: linear-gradient(160deg, rgba(30, 41, 59, 0.78), rgba(10, 18, 36, 0.88));
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: transform 0.1s ease, border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+    }
+    .pin-key:active {
+      transform: scale(0.94);
+      border-color: rgba(56, 189, 248, 0.85);
+      background: linear-gradient(160deg, rgba(14, 165, 233, 0.28), rgba(15, 23, 42, 0.92));
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      color: #7dd3fc;
+    }
+
+    .lock-footer {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
 
     /* =====================================================================
-       6. STRICT OVERLAY SYSTEM (DEFAULT DISPLAY: NONE; ONLY .open SHOWS)
+       7. PINNED-HEADER 1-ON-1 CHAT OVERLAY (#chat-screen)
        ===================================================================== */
-    .overlay-screen {
-      display: none;
-      position: absolute;
-      inset: 0;
-      z-index: 50;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow-y: auto;
-      padding: 20px 22px;
-      background: linear-gradient(165deg, var(--bg-obsidian) 0%, var(--bg-deep) 55%, #040812 100%);
-    }
-    .overlay-screen.open { display: flex !important; }
-
-    /* PINNED MOBILE KEYBOARD CHAT VIEW */
-    #chat-view {
-      display: none;
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100dvh;
-      z-index: 60;
-      flex-direction: column;
-      overflow: hidden;
+    #chat-screen {
+      z-index: 70;
       background: var(--bg-obsidian);
-    }
-    #chat-view.open { display: flex !important; }
-
-    @media (min-width: 500px) {
-      #chat-view {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100% !important;
-        top: 0 !important;
-        border-radius: 34px;
-      }
     }
 
     .chat-header {
@@ -714,9 +802,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+      background: rgba(8, 15, 30, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.22);
     }
+
     .chat-peer-btn {
       display: flex;
       align-items: center;
@@ -725,6 +817,7 @@
       flex: 1;
       text-align: left;
     }
+
     .chat-messages {
       flex: 1 1 auto;
       min-height: 0;
@@ -741,6 +834,7 @@
       flex-shrink: 0;
       z-index: 10;
       padding: 10px 12px max(12px, env(safe-area-inset-bottom));
+      background: rgba(8, 15, 30, 0.94);
       border-top: 1px solid rgba(56, 189, 248, 0.2);
     }
 
@@ -763,7 +857,7 @@
       color: #f8fafc;
     }
     .msg-bubble.them {
-      background: rgba(15, 23, 42, 0.86);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid var(--border-subtle);
       border-bottom-left-radius: 4px;
       color: #e2e8f0;
@@ -779,19 +873,9 @@
       color: var(--text-secondary);
     }
 
-    /* FULL-SCREEN CALL OVERLAY */
-    #call-overlay {
-      display: none;
-      position: absolute;
-      inset: 0;
-      z-index: 70;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      background: linear-gradient(180deg, #030712 0%, #09172e 50%, #030712 100%);
-    }
-    #call-overlay.open { display: flex !important; }
-
+    /* =====================================================================
+       8. FULL-SCREEN CALL LAYER & IN-CALL CHAT DRAWER
+       ===================================================================== */
     #remote-video {
       position: absolute;
       inset: 0;
@@ -800,14 +884,16 @@
       object-fit: cover;
       z-index: 0;
     }
+
     .call-top-bar {
       position: relative;
       z-index: 10;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 16px 0;
+      padding: max(18px, env(safe-area-inset-top)) 16px 0;
     }
+
     .call-center {
       position: relative;
       z-index: 10;
@@ -819,21 +905,22 @@
       padding: 20px;
       text-align: center;
     }
+
     .call-avatar-lg {
-      width: 112px;
-      height: 112px;
+      width: 116px;
+      height: 116px;
       border-radius: 50%;
       overflow: hidden;
       background: #0f172a;
       border: 2px solid rgba(56, 189, 248, 0.8);
-      box-shadow: 0 0 32px rgba(56, 189, 248, 0.38);
+      box-shadow: 0 0 34px rgba(56, 189, 248, 0.38);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 800;
       color: var(--cyan);
-      margin-bottom: 16px;
+      margin: 0 auto 16px;
     }
     .call-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -841,8 +928,8 @@
       position: absolute;
       bottom: 14px;
       right: 14px;
-      width: 108px;
-      height: 144px;
+      width: 106px;
+      height: 142px;
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid rgba(56, 189, 248, 0.55);
@@ -852,11 +939,7 @@
       justify-content: center;
       z-index: 15;
     }
-    #local-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    #local-video { width: 100%; height: 100%; object-fit: cover; }
     .mirror { transform: scaleX(-1); }
 
     .call-incoming-controls {
@@ -865,20 +948,23 @@
       display: flex;
       align-items: center;
       justify-content: space-around;
-      padding: 0 36px 38px;
+      padding: 0 36px max(36px, env(safe-area-inset-bottom));
     }
+
     .call-active-controls {
       position: relative;
       z-index: 10;
-      padding: 0 14px 28px;
+      padding: 0 12px max(24px, env(safe-area-inset-bottom));
     }
+
     .call-dock {
       display: flex;
       align-items: center;
       justify-content: space-around;
-      padding: 10px 8px;
+      padding: 10px 6px;
       border-radius: 24px;
     }
+
     .call-ctrl-btn {
       display: flex;
       flex-direction: column;
@@ -888,6 +974,7 @@
       font-weight: 700;
       color: #cbd5e1;
     }
+
     .call-ctrl-circle {
       width: 44px;
       height: 44px;
@@ -897,20 +984,24 @@
       justify-content: center;
     }
 
-    /* MODALS */
-    .modal-backdrop {
-      display: none;
+    /* In-call quick chat drawer */
+    #incall-chat-drawer {
       position: absolute;
-      inset: 0;
-      z-index: 80;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      background: rgba(2, 6, 15, 0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      left: 12px;
+      right: 12px;
+      bottom: 108px;
+      max-height: 42dvh;
+      z-index: 25;
+      border-radius: 20px;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .modal-backdrop.open { display: flex !important; }
+    #incall-chat-drawer.active { display: flex; }
+
+    /* =====================================================================
+       9. MODALS, TOASTS & ANIMATIONS
+       ===================================================================== */
     .modal-box {
       width: 100%;
       max-width: 360px;
@@ -921,60 +1012,21 @@
       gap: 14px;
     }
 
-    /* PIN KEYPAD */
-    .pin-dots {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin: 14px 0;
-    }
-    .pin-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(56, 189, 248, 0.5);
-      background: rgba(15, 23, 42, 0.7);
-      transition: all 0.15s ease;
-    }
-    .pin-dot.filled {
-      background: var(--cyan);
-      border-color: #7dd3fc;
-      transform: scale(1.12);
-      box-shadow: 0 0 12px var(--cyan);
-    }
-    .pin-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 100%;
-      max-width: 280px;
-      padding: 14px;
-      border-radius: 22px;
-    }
-    .pin-key {
-      height: 48px;
-      border-radius: 12px;
-      font-family: var(--font-mono);
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    /* TOASTS */
     #toast-box {
-      position: absolute;
-      top: 14px;
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
-      z-index: 95;
+      z-index: 120;
       width: 88%;
-      max-width: 350px;
+      max-width: 360px;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
     }
+
     .toast-item {
       padding: 9px 16px;
       border-radius: 14px;
@@ -992,6 +1044,7 @@
       from { opacity: 0; transform: translateY(-8px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
+
     @keyframes shakeX {
       0%, 100% { transform: translateX(0); }
       20% { transform: translateX(-8px); }
@@ -1005,492 +1058,529 @@
       text-align: center;
       font-size: 11px;
       color: var(--text-muted);
-      margin: 6px 0 0;
+      margin: 4px 0 0;
     }
-
-    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <!-- Hidden File Input for Own & Contact Profile Photos -->
+  <!-- Hidden File Picker -->
   <input type="file" id="photo-picker" accept="image/*" class="hidden" />
 
-  <div class="stage">
-    <div id="app-shell">
-      <div class="hud-grid"></div>
-      <div class="hud-glow hud-glow-blue"></div>
-      <div class="hud-glow hud-glow-emerald"></div>
+  <!-- Spatial Glass Ambient Background -->
+  <div class="hud-bg"></div>
+  <div class="hud-grid"></div>
 
-      <!-- Toast Notifications -->
-      <div id="toast-box"></div>
+  <!-- Toast Container -->
+  <div id="toast-box"></div>
 
-      <!-- ==================== MAIN WORKSPACE ==================== -->
-      <div id="main-workspace">
-        <!-- Fixed Header -->
-        <header class="app-header">
-          <div class="header-left">
-            <button type="button" id="btn-header-avatar" class="avatar-btn" title="Change Your Photo">
-              <div id="header-avatar" class="avatar-circle">FC</div>
-              <span class="cam-badge">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              </span>
-            </button>
-            <div style="min-width:0;">
-              <div class="brand-row">
-                <h1 class="brand-title">FamCall</h1>
-                <button type="button" id="btn-p2p-status" class="status-pill">
-                  <span id="p2p-dot" class="status-dot"></span>
-                  <span id="p2p-label">Connecting</span>
-                </button>
-              </div>
-              <p id="header-id" class="header-sub">FAM-0000</p>
-            </div>
-          </div>
-
-          <div class="header-actions">
-            <button type="button" id="btn-header-install" class="btn btn-cyan btn-install-sm">Install</button>
-            <button type="button" id="btn-header-lock" class="btn btn-ghost btn-icon-sq" title="Lock App">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+  <!-- ==================== MAIN APP SHELL ==================== -->
+  <div id="app-shell">
+    <header class="app-header">
+      <div class="header-left">
+        <svg class="brand-icon-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="fcHdrGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="55%" stop-color="#0a1e3d"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="120" rx="28" fill="url(#fcHdrGrad)"/>
+          <rect x="4" y="4" width="112" height="112" rx="24" fill="none" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="3"/>
+          <path d="M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z" fill="none" stroke="#e0f2fe" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z" fill="#38bdf8" fill-opacity="0.32" stroke="#38bdf8" stroke-width="3.5"/>
+        </svg>
+        <div class="header-title-wrap">
+          <div class="header-brand-row">
+            <h1 class="brand-name">FamCall HUD</h1>
+            <button type="button" id="btn-p2p-status" class="status-pill" title="P2P Status">
+              <span id="p2p-dot" class="status-dot"></span>
+              <span id="p2p-label">Connecting</span>
             </button>
           </div>
-        </header>
-
-        <!-- Scrollable Main Content -->
-        <main class="app-main">
-          <!-- TAB 1: CHATS -->
-          <section id="tab-chats" class="tab-pane active">
-            <div class="glass search-box">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input id="search-input" type="text" placeholder="Search family name or FAM-ID..." />
-            </div>
-
-            <div class="filter-row">
-              <div class="filter-group">
-                <button type="button" data-filter="all" class="btn btn-cyan filter-pill">All</button>
-                <button type="button" data-filter="online" class="btn btn-ghost filter-pill">Online</button>
-                <button type="button" data-filter="unread" class="btn btn-ghost filter-pill">Unread</button>
-              </div>
-              <button type="button" id="btn-goto-add" class="btn btn-ghost filter-pill" style="color:#38bdf8;">+ Add ID</button>
-            </div>
-
-            <div id="contacts-list" style="display:flex;flex-direction:column;gap:12px;"></div>
-          </section>
-
-          <!-- TAB 2: CALLS -->
-          <section id="tab-calls" class="tab-pane">
-            <div class="section-head">
-              <h3 class="section-title">Recent Calls</h3>
-              <span id="calls-count" class="count-chip">0</span>
-            </div>
-            <div id="calls-list" style="display:flex;flex-direction:column;gap:10px;"></div>
-          </section>
-
-          <!-- TAB 3: FRIEND REQUESTS -->
-          <section id="tab-requests" class="tab-pane">
-            <div class="glass-strong panel-card">
-              <div class="row-between">
-                <div>
-                  <div class="section-title">Your Family ID</div>
-                  <div id="req-own-id" class="mono" style="font-size:20px;font-weight:700;color:#38bdf8;margin-top:4px;">FAM-0000</div>
-                </div>
-                <button type="button" id="btn-copy-own-id" class="btn btn-ghost" style="padding:8px 14px;color:#38bdf8;">Copy ID</button>
-              </div>
-              <button type="button" id="btn-share-link" class="btn btn-cyan" style="padding:10px;width:100%;">Share Invite Link</button>
-            </div>
-
-            <div class="glass panel-card">
-              <div class="section-title">Add Family Member</div>
-              <form id="form-send-req" class="inline-form">
-                <input id="input-friend-id" type="text" placeholder="Enter Family ID (FAM-4821)" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
-                <button type="submit" class="btn btn-cyan" style="padding:10px 16px;">Send</button>
-              </form>
-            </div>
-
-            <div class="section-head">
-              <h3 class="section-title">Incoming Requests</h3>
-              <span id="pending-count" class="count-chip" style="color:#34d399;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.14);">0</span>
-            </div>
-            <div id="incoming-list" style="display:flex;flex-direction:column;gap:10px;"></div>
-
-            <div class="section-head" style="margin-top:4px;">
-              <h3 class="section-title">Sent Requests</h3>
-            </div>
-            <div id="sent-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-          </section>
-
-          <!-- TAB 4: PROFILE -->
-          <section id="tab-profile" class="tab-pane">
-            <div class="glass-strong panel-card">
-              <div style="display:flex;align-items:center;gap:14px;">
-                <button type="button" id="btn-profile-avatar" class="avatar-btn" title="Change Photo">
-                  <div id="profile-avatar" class="avatar-circle" style="width:62px;height:62px;font-size:20px;">FC</div>
-                  <span class="cam-badge" style="width:22px;height:22px;">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                  </span>
-                </button>
-                <div style="min-width:0;flex:1;">
-                  <div id="profile-name" style="font-size:17px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">User</div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-                    <span id="profile-id" class="mono" style="font-size:12px;font-weight:700;color:#38bdf8;">FAM-0000</span>
-                    <button type="button" id="btn-copy-profile-id" class="btn btn-ghost" style="padding:3px 8px;font-size:10px;">Copy</button>
-                  </div>
-                </div>
-              </div>
-              <div class="grid-2">
-                <button type="button" id="btn-own-photo-change" class="btn btn-cyan" style="padding:9px;">Change Photo</button>
-                <button type="button" id="btn-own-photo-remove" class="btn btn-ghost" style="padding:9px;color:#f87171;">Remove Photo</button>
-              </div>
-            </div>
-
-            <div class="glass panel-card">
-              <div class="row-between">
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:#fff;">Install FamCall on Mobile</div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Add to Home Screen for full-screen HUD</div>
-                </div>
-                <button type="button" id="btn-profile-install" class="btn btn-cyan" style="padding:8px 14px;">Install</button>
-              </div>
-            </div>
-
-            <div class="glass panel-card">
-              <div class="section-title">Edit Display Name</div>
-              <form id="form-edit-name" class="inline-form">
-                <input id="input-edit-name" type="text" maxlength="24" class="hud-input" />
-                <button type="submit" class="btn btn-cyan" style="padding:10px 16px;">Save</button>
-              </form>
-            </div>
-
-            <div class="glass panel-card">
-              <div class="section-title">Change 4-Digit Personal PIN</div>
-              <form id="form-edit-pin" class="inline-form">
-                <input id="input-edit-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" class="hud-input mono" style="letter-spacing:0.4em;" />
-                <button type="submit" class="btn btn-ghost" style="padding:10px 16px;color:#38bdf8;">Update</button>
-              </form>
-            </div>
-
-            <div class="glass panel-card">
-              <div class="row-between">
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:#fff;">Call Ringtone Sound</div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Synthesized chime for incoming calls</div>
-                </div>
-                <button type="button" id="btn-toggle-ring" class="btn btn-cyan" style="padding:6px 12px;">ON</button>
-              </div>
-              <button type="button" id="btn-open-reset" class="btn btn-rose" style="padding:10px;width:100%;">Reset Local Data</button>
-            </div>
-
-            <p class="credit">Designed by: Mohammad Firoz Alam</p>
-          </section>
-        </main>
-
-        <!-- Fixed Bottom Navigation -->
-        <nav class="app-nav">
-          <button type="button" data-tab="chats" class="nav-btn active">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Chats</span>
-          </button>
-          <button type="button" data-tab="calls" class="nav-btn">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span>Calls</span>
-          </button>
-          <button type="button" data-tab="requests" class="nav-btn">
-            <span id="nav-req-badge" class="nav-badge">0</span>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-            <span>Requests</span>
-          </button>
-          <button type="button" data-tab="profile" class="nav-btn">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>Profile</span>
-          </button>
-        </nav>
+          <p id="header-id" class="header-sub">FAM-0000</p>
+        </div>
       </div>
 
-      <!-- ==================== OVERLAY 1: FIRST-TIME SETUP ==================== -->
-      <section id="setup-screen" class="overlay-screen">
-        <div class="row-between">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="btn btn-cyan" style="width:36px;height:36px;border-radius:11px;font-size:13px;">FC</div>
+      <div class="header-actions">
+        <button type="button" id="btn-header-install" class="btn btn-cyan" style="padding:6px 10px;border-radius:999px;font-size:11px;">Install</button>
+        <button type="button" id="btn-header-avatar" class="avatar-btn" title="Change Your Photo">
+          <div id="header-avatar" class="avatar-circle" style="width:34px;height:34px;font-size:12px;">FC</div>
+        </button>
+        <button type="button" id="btn-header-lock" class="btn btn-ghost btn-icon-sq" title="Lock App">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- TAB 1: CHATS -->
+      <section id="tab-chats" class="tab-pane active">
+        <div class="glass search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search-input" type="text" placeholder="Search family name or FAM-ID..." />
+        </div>
+        <div id="contacts-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </section>
+
+      <!-- TAB 2: CALLS (CLEAN HISTORY ONLY) -->
+      <section id="tab-calls" class="tab-pane">
+        <div class="section-head">
+          <h3 class="section-title">Recent Calls</h3>
+          <span id="calls-count" class="count-chip">0</span>
+        </div>
+        <div id="calls-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </section>
+
+      <!-- TAB 3: REQUESTS -->
+      <section id="tab-requests" class="tab-pane">
+        <div class="glass-strong panel-card">
+          <div class="row-between">
             <div>
-              <div style="font-size:14px;font-weight:800;color:#fff;">FamCall HUD</div>
-              <div style="font-size:10px;font-weight:600;color:#38bdf8;">Zero-Firebase P2P</div>
+              <div class="section-title">Your Family ID</div>
+              <div id="req-own-id" class="mono" style="font-size:20px;font-weight:700;color:#38bdf8;margin-top:4px;">FAM-0000</div>
             </div>
+            <button type="button" id="btn-copy-own-id" class="btn btn-ghost" style="padding:8px 14px;color:#38bdf8;">Copy ID</button>
           </div>
-          <span class="status-pill" style="color:#34d399;">● READY</span>
+          <button type="button" id="btn-share-link" class="btn btn-cyan" style="padding:10px;width:100%;">Share Invite Link</button>
         </div>
 
-        <div style="margin:auto 0;padding:16px 0;">
-          <div style="text-align:center;margin-bottom:16px;">
-            <h1 style="margin:0;font-size:24px;font-weight:800;color:#fff;">Create Your Profile</h1>
-            <p style="margin:6px 0 0;font-size:12px;color:var(--text-secondary);">Private 1-on-1 Family Calling &amp; Chat</p>
-          </div>
-
-          <form id="form-setup" class="glass-strong panel-card">
-            <div style="display:flex;justify-content:center;">
-              <button type="button" id="btn-setup-photo" class="avatar-btn" title="Upload Photo">
-                <div id="setup-avatar" class="avatar-circle" style="width:64px;height:64px;font-size:20px;">FC</div>
-                <span class="cam-badge" style="width:22px;height:22px;">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </span>
-              </button>
-            </div>
-
-            <div>
-              <label for="setup-name" class="section-title" style="display:block;margin-bottom:6px;">Display Name</label>
-              <input id="setup-name" type="text" required maxlength="24" placeholder="Your Name" class="hud-input" />
-            </div>
-
-            <div>
-              <div class="row-between" style="margin-bottom:6px;">
-                <label for="setup-id" class="section-title">Your Family ID</label>
-                <button type="button" id="btn-gen-id" style="font-size:11px;font-weight:700;color:#38bdf8;text-decoration:underline;">Auto-Generate</button>
-              </div>
-              <input id="setup-id" type="text" required maxlength="16" placeholder="FAM-1234" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
-            </div>
-
-            <div>
-              <label for="setup-pin" class="section-title" style="display:block;margin-bottom:6px;">4-Digit Personal PIN</label>
-              <input id="setup-pin" type="password" inputmode="numeric" maxlength="4" required placeholder="••••" class="hud-input mono" style="text-align:center;letter-spacing:0.5em;" />
-            </div>
-
-            <button type="submit" class="btn btn-cyan" style="padding:12px;width:100%;font-size:13px;">Create Profile &amp; Enter</button>
+        <div class="glass panel-card">
+          <div class="section-title">Send Friend Request</div>
+          <form id="form-send-req" class="inline-form">
+            <input id="input-friend-id" type="text" placeholder="Enter Family ID (FAM-4821)" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
+            <button type="submit" class="btn btn-cyan" style="padding:10px 16px;">Send</button>
           </form>
         </div>
 
-        <p class="credit">Designed by: Mohammad Firoz Alam</p>
+        <div class="section-head">
+          <h3 class="section-title">Incoming Requests</h3>
+          <span id="pending-count" class="count-chip" style="color:#34d399;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.14);">0</span>
+        </div>
+        <div id="incoming-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+        <div class="section-head" style="margin-top:4px;">
+          <h3 class="section-title">Outgoing Pending Requests</h3>
+        </div>
+        <div id="sent-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </section>
 
-      <!-- ==================== OVERLAY 2: PIN LOCK SCREEN ==================== -->
-      <section id="lock-screen" class="overlay-screen">
-        <div class="row-between">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="btn btn-cyan" style="width:32px;height:32px;border-radius:10px;font-size:12px;">FC</div>
-            <span style="font-size:14px;font-weight:800;color:#fff;">FamCall HUD</span>
-          </div>
-          <span class="status-pill" style="color:#38bdf8;">LOCKED</span>
-        </div>
-
-        <div style="margin:auto 0;display:flex;flex-direction:column;align-items:center;padding:10px 0;">
-          <div id="lock-avatar" class="avatar-circle" style="width:78px;height:78px;font-size:24px;margin-bottom:10px;">FC</div>
-          <h2 id="lock-name" style="margin:0;font-size:20px;font-weight:800;color:#fff;">User</h2>
-          <span id="lock-id" class="id-chip" style="margin-top:6px;">FAM-0000</span>
-          <p id="pin-msg" style="margin:12px 0 0;font-size:12px;color:var(--text-secondary);">Enter your 4-digit personal PIN</p>
-
-          <div id="pin-dots" class="pin-dots">
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
-          </div>
-
-          <div class="glass-strong pin-grid">
-            <button type="button" data-digit="1" class="btn btn-ghost pin-key">1</button>
-            <button type="button" data-digit="2" class="btn btn-ghost pin-key">2</button>
-            <button type="button" data-digit="3" class="btn btn-ghost pin-key">3</button>
-            <button type="button" data-digit="4" class="btn btn-ghost pin-key">4</button>
-            <button type="button" data-digit="5" class="btn btn-ghost pin-key">5</button>
-            <button type="button" data-digit="6" class="btn btn-ghost pin-key">6</button>
-            <button type="button" data-digit="7" class="btn btn-ghost pin-key">7</button>
-            <button type="button" data-digit="8" class="btn btn-ghost pin-key">8</button>
-            <button type="button" data-digit="9" class="btn btn-ghost pin-key">9</button>
-            <button type="button" id="btn-pin-clear" class="btn btn-ghost pin-key" style="font-size:12px;color:var(--text-secondary);">CLR</button>
-            <button type="button" data-digit="0" class="btn btn-ghost pin-key">0</button>
-            <button type="button" id="btn-pin-back" class="btn btn-ghost pin-key" style="color:#38bdf8;">⌫</button>
-          </div>
-
-          <button type="button" id="btn-forgot-pin" style="margin-top:14px;font-size:11px;font-weight:600;color:var(--text-secondary);text-decoration:underline;">Forgot PIN? Reset Device</button>
-        </div>
-
-        <p class="credit">Designed by: Mohammad Firoz Alam</p>
-      </section>
-
-      <!-- ==================== OVERLAY 3: PINNED 1-ON-1 CHAT VIEW ==================== -->
-      <section id="chat-view">
-        <header class="chat-header glass-strong">
-          <button type="button" id="btn-chat-back" class="btn btn-ghost" style="width:36px;height:36px;border-radius:11px;color:#38bdf8;font-size:16px;flex-shrink:0;">←</button>
-          <button type="button" id="btn-chat-edit" class="chat-peer-btn">
-            <div class="avatar-btn">
-              <div id="chat-peer-avatar" class="avatar-circle" style="width:40px;height:40px;font-size:13px;">FC</div>
-              <span class="cam-badge">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <!-- TAB 4: PROFILE -->
+      <section id="tab-profile" class="tab-pane">
+        <div class="glass-strong panel-card">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button type="button" id="btn-profile-avatar" class="avatar-btn" title="Change Photo">
+              <div id="profile-avatar" class="avatar-circle" style="width:66px;height:66px;font-size:22px;">FC</div>
+              <span class="cam-badge" style="width:22px;height:22px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </span>
-            </div>
+            </button>
             <div style="min-width:0;flex:1;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span id="chat-peer-name" style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Contact</span>
-                <span id="chat-peer-id" class="mono" style="font-size:10px;color:#38bdf8;flex-shrink:0;">FAM-0000</span>
+              <div id="profile-name" style="font-size:18px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">User</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:5px;">
+                <span id="profile-id" class="id-chip">FAM-0000</span>
+                <button type="button" id="btn-copy-profile-id" class="btn btn-ghost" style="padding:4px 9px;font-size:10px;">Copy</button>
               </div>
-              <div id="chat-peer-status" style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">• Offline</div>
-            </div>
-          </button>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button type="button" id="btn-chat-audio" class="btn btn-emerald" style="width:36px;height:36px;border-radius:11px;" title="Audio Call">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </button>
-            <button type="button" id="btn-chat-video" class="btn btn-cyan" style="width:36px;height:36px;border-radius:11px;" title="Video Call">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-            </button>
-          </div>
-        </header>
-
-        <div id="chat-messages" class="chat-messages"></div>
-
-        <div class="chat-composer glass-strong">
-          <form id="form-chat-send" class="inline-form">
-            <input id="input-chat-msg" type="text" placeholder="Type a message..." autocomplete="off" class="hud-input" style="border-radius:16px;" />
-            <button type="submit" class="btn btn-cyan" style="width:42px;height:42px;border-radius:14px;flex-shrink:0;" aria-label="Send">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ==================== OVERLAY 4: FULL-SCREEN CALL HUD ==================== -->
-      <section id="call-overlay">
-        <video id="remote-video" autoplay playsinline class="hidden"></video>
-
-        <div class="call-top-bar">
-          <span id="call-type-badge" class="status-pill" style="color:#7dd3fc;">1-on-1 Video</span>
-          <span id="call-timer" class="status-pill hidden" style="color:#fff;">00:00</span>
-        </div>
-
-        <div class="call-center">
-          <div id="call-avatar-stage">
-            <div id="call-avatar" class="call-avatar-lg">FC</div>
-            <h2 id="call-name" style="margin:0;font-size:22px;font-weight:800;color:#fff;">Family Member</h2>
-            <p id="call-id-sub" class="mono" style="margin:4px 0 0;font-size:11px;color:#38bdf8;">FAM-0000</p>
-            <p id="call-status" style="margin:8px 0 0;font-size:13px;font-weight:600;color:#94a3b8;">Calling...</p>
-          </div>
-
-          <div id="local-pip" class="hidden">
-            <video id="local-video" autoplay playsinline muted class="mirror hidden"></video>
-            <div id="local-pip-fallback" style="text-align:center;font-size:11px;color:var(--text-secondary);">YOU<br/>Cam Off</div>
-          </div>
-        </div>
-
-        <div id="call-incoming-bar" class="call-incoming-controls hidden">
-          <button type="button" id="btn-call-decline" class="call-ctrl-btn" style="color:#fca5a5;">
-            <span class="call-ctrl-circle btn-rose" style="width:62px;height:62px;font-size:20px;">✕</span>
-            <span>Decline</span>
-          </button>
-          <button type="button" id="btn-call-accept" class="call-ctrl-btn" style="color:#6ee7b7;">
-            <span class="call-ctrl-circle btn-emerald" style="width:62px;height:62px;">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </span>
-            <span>Accept</span>
-          </button>
-        </div>
-
-        <div id="call-active-bar" class="call-active-controls">
-          <div class="glass-strong call-dock">
-            <button type="button" id="btn-call-mute" class="call-ctrl-btn">
-              <span class="call-ctrl-circle btn-ghost">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-              </span>
-              <span>Mute</span>
-            </button>
-            <button type="button" id="btn-call-cam" class="call-ctrl-btn">
-              <span class="call-ctrl-circle btn-ghost">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-              </span>
-              <span>Cam</span>
-            </button>
-            <button type="button" id="btn-call-flip" class="call-ctrl-btn">
-              <span class="call-ctrl-circle btn-ghost">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-              </span>
-              <span>Flip</span>
-            </button>
-            <button type="button" id="btn-call-end" class="call-ctrl-btn" style="color:#fca5a5;">
-              <span class="call-ctrl-circle btn-rose" style="font-size:16px;font-weight:800;">✕</span>
-              <span>End</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== MODAL: EDIT CONTACT ==================== -->
-      <section id="contact-modal" class="modal-backdrop">
-        <div class="glass-strong modal-box">
-          <div class="row-between">
-            <span class="section-title" style="color:#38bdf8;">Edit Contact</span>
-            <button type="button" id="btn-close-contact-modal" class="btn btn-ghost btn-icon-sq" style="width:30px;height:30px;">✕</button>
-          </div>
-
-          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-            <button type="button" id="btn-cm-cam" class="avatar-btn" title="Change Contact Photo">
-              <div id="cm-avatar" class="avatar-circle" style="width:86px;height:86px;font-size:26px;">FC</div>
-              <span class="cam-badge" style="width:26px;height:26px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              </span>
-            </button>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span id="cm-id" class="id-chip">FAM-0000</span>
-              <button type="button" id="btn-cm-copy" class="btn btn-ghost" style="padding:4px 10px;font-size:11px;">Copy</button>
             </div>
           </div>
-
           <div class="grid-2">
-            <button type="button" id="btn-cm-change-photo" class="btn btn-cyan" style="padding:9px;">Change Photo</button>
-            <button type="button" id="btn-cm-remove-photo" class="btn btn-ghost" style="padding:9px;color:#f87171;">Remove Photo</button>
-          </div>
-
-          <form id="form-cm-nick" class="inline-form">
-            <input id="cm-nick-input" type="text" maxlength="24" placeholder="Contact Nickname" class="hud-input" />
-            <button type="submit" class="btn btn-ghost" style="padding:10px 14px;color:#38bdf8;">Save</button>
-          </form>
-
-          <div class="grid-2" style="padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
-            <button type="button" id="btn-cm-audio" class="btn btn-emerald" style="padding:10px;">Audio Call</button>
-            <button type="button" id="btn-cm-video" class="btn btn-cyan" style="padding:10px;">Video Call</button>
+            <button type="button" id="btn-own-photo-change" class="btn btn-cyan" style="padding:9px;">Upload Photo</button>
+            <button type="button" id="btn-own-photo-remove" class="btn btn-ghost" style="padding:9px;color:#f87171;">Remove Photo</button>
           </div>
         </div>
-      </section>
 
-      <!-- ==================== MODAL: INSTALL PWA ==================== -->
-      <section id="install-modal" class="modal-backdrop">
-        <div class="glass-strong modal-box">
+        <div class="glass panel-card">
+          <div class="section-title">Display Name</div>
+          <form id="form-edit-name" class="inline-form">
+            <input id="input-edit-name" type="text" maxlength="24" placeholder="Your Name" class="hud-input" />
+            <button type="submit" class="btn btn-ghost" style="padding:10px 16px;color:#38bdf8;">Save</button>
+          </form>
+        </div>
+
+        <div class="glass panel-card">
+          <div class="section-title">Change 4-Digit Personal PIN</div>
+          <form id="form-edit-pin" class="inline-form">
+            <input id="input-edit-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" class="hud-input mono" style="letter-spacing:0.4em;" />
+            <button type="submit" class="btn btn-ghost" style="padding:10px 16px;color:#38bdf8;">Update</button>
+          </form>
+          <div style="font-size:11px;color:var(--text-secondary);">Security: 3-Minute Auto-Lock is <b style="color:#34d399;">ACTIVE</b></div>
+        </div>
+
+        <div class="glass panel-card">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff;">PWA App Icons (Remove Chrome Badge)</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.45;">Download both PNG icons and upload them to your GitHub repo root alongside <span class="mono" style="color:#38bdf8;">manifest.json</span> and <span class="mono" style="color:#38bdf8;">sw.js</span>.</div>
+          </div>
+          <div class="grid-2">
+            <button type="button" id="btn-dl-icon-192" class="btn btn-ghost" style="padding:9px;color:#38bdf8;">Download icon-192.png</button>
+            <button type="button" id="btn-dl-icon-512" class="btn btn-ghost" style="padding:9px;color:#38bdf8;">Download icon-512.png</button>
+          </div>
+        </div>
+
+        <div class="glass panel-card">
           <div class="row-between">
             <div>
-              <div style="font-size:16px;font-weight:800;color:#fff;">Install FamCall</div>
-              <div style="font-size:11px;color:var(--text-secondary);">Full-screen Home Screen app</div>
+              <div style="font-size:13px;font-weight:700;color:#fff;">Call Ringtone Sound</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Synthesized chime for incoming calls</div>
             </div>
-            <button type="button" id="btn-close-install" class="btn btn-ghost btn-icon-sq" style="width:30px;height:30px;">✕</button>
+            <button type="button" id="btn-toggle-ring" class="btn btn-cyan" style="padding:6px 12px;">ON</button>
           </div>
-
-          <div class="grid-2">
-            <button type="button" id="btn-os-android" class="btn btn-cyan" style="padding:8px;">Android Chrome</button>
-            <button type="button" id="btn-os-ios" class="btn btn-ghost" style="padding:8px;">iPhone Safari</button>
-          </div>
-
-          <div id="guide-android" style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;">
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">1. Tap the top-right <b>⋮</b> menu in Chrome.</div>
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">2. Tap <b>"Install app"</b> or <b>"Add to Home screen"</b>.</div>
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">3. Tap <b>Install</b> to launch FamCall full-screen.</div>
-          </div>
-
-          <div id="guide-ios" class="hidden" style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;">
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">1. Tap the <b>Share icon (↑)</b> at the bottom of Safari.</div>
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">2. Scroll down and tap <b>"Add to Home Screen"</b>.</div>
-            <div class="glass" style="padding:10px 12px;border-radius:12px;">3. Tap <b>Add</b> in the top-right corner.</div>
-          </div>
-
-          <button type="button" id="btn-done-install" class="btn btn-cyan" style="padding:10px;width:100%;">Done</button>
+          <button type="button" id="btn-open-reset" class="btn btn-rose" style="padding:10px;width:100%;">Reset Local Data</button>
         </div>
-      </section>
 
-      <!-- ==================== MODAL: CONFIRM RESET ==================== -->
-      <section id="reset-modal" class="modal-backdrop">
-        <div class="glass-strong modal-box" style="text-align:center;">
-          <div style="font-size:16px;font-weight:800;color:#fff;">Reset Local Data?</div>
-          <p style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5;">This removes your profile, PIN, contacts, photos, and chat history from this device.</p>
-          <div class="grid-2">
-            <button type="button" id="btn-cancel-reset" class="btn btn-ghost" style="padding:10px;">Cancel</button>
-            <button type="button" id="btn-confirm-reset" class="btn btn-rose" style="padding:10px;">Reset All</button>
-          </div>
-        </div>
+        <p class="credit">Designed by: Mohammad Firoz Alam</p>
       </section>
-    </div>
+    </main>
+
+    <!-- Floating Bottom Navigation Dock -->
+    <nav class="app-nav">
+      <button type="button" data-tab="chats" class="nav-btn active">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Chats</span>
+      </button>
+      <button type="button" data-tab="calls" class="nav-btn">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>Calls</span>
+      </button>
+      <button type="button" data-tab="requests" class="nav-btn">
+        <span id="nav-req-badge" class="nav-badge">0</span>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span>Requests</span>
+      </button>
+      <button type="button" data-tab="profile" class="nav-btn">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Profile</span>
+      </button>
+    </nav>
   </div>
+
+  <!-- ==================== SCREEN LAYER 1: FIRST-TIME SETUP ==================== -->
+  <section id="setup-screen" class="screen-layer">
+    <div class="row-between" style="max-width:440px;width:100%;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg class="brand-icon-lg" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="fcSetupGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="55%" stop-color="#0a1e3d"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="120" rx="28" fill="url(#fcSetupGrad)"/>
+          <rect x="4" y="4" width="112" height="112" rx="24" fill="none" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="3"/>
+          <path d="M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z" fill="none" stroke="#e0f2fe" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z" fill="#38bdf8" fill-opacity="0.32" stroke="#38bdf8" stroke-width="3.5"/>
+        </svg>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#fff;">FamCall HUD</div>
+          <div style="font-size:10px;font-weight:600;color:#38bdf8;">Zero-Firebase P2P</div>
+        </div>
+      </div>
+      <span class="status-pill" style="color:#34d399;">● READY</span>
+    </div>
+
+    <div style="margin:auto;width:100%;max-width:400px;padding:16px 0;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <h1 style="margin:0;font-size:24px;font-weight:800;color:#fff;">Create Your Profile</h1>
+        <p style="margin:6px 0 0;font-size:12px;color:var(--text-secondary);">Private 1-on-1 Family Calling &amp; Chat</p>
+      </div>
+
+      <form id="form-setup" class="glass-strong panel-card">
+        <div style="display:flex;justify-content:center;">
+          <button type="button" id="btn-setup-photo" class="avatar-btn" title="Upload Photo">
+            <div id="setup-avatar" class="avatar-circle" style="width:72px;height:72px;font-size:22px;">FC</div>
+            <span class="cam-badge" style="width:24px;height:24px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </span>
+          </button>
+        </div>
+
+        <div>
+          <label for="setup-name" class="section-title" style="display:block;margin-bottom:6px;">Display Name</label>
+          <input id="setup-name" type="text" required maxlength="24" placeholder="Your Name" class="hud-input" />
+        </div>
+
+        <div>
+          <div class="row-between" style="margin-bottom:6px;">
+            <label for="setup-id" class="section-title">Your Family ID</label>
+            <button type="button" id="btn-gen-id" style="font-size:11px;font-weight:700;color:#38bdf8;text-decoration:underline;">Auto-Generate</button>
+          </div>
+          <input id="setup-id" type="text" required maxlength="16" placeholder="FAM-1234" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
+        </div>
+
+        <div>
+          <label for="setup-pin" class="section-title" style="display:block;margin-bottom:6px;">4-Digit Personal PIN</label>
+          <input id="setup-pin" type="password" inputmode="numeric" maxlength="4" required placeholder="••••" class="hud-input mono" style="text-align:center;letter-spacing:0.5em;" />
+        </div>
+
+        <button type="submit" class="btn btn-cyan" style="padding:12px;width:100%;font-size:13px;">Create Profile &amp; Enter</button>
+      </form>
+    </div>
+
+    <p class="credit">Designed by: Mohammad Firoz Alam</p>
+  </section>
+
+  <!-- ==================== SCREEN LAYER 2: AUTO-FIT PIN LOCK SCREEN ==================== -->
+  <section id="lock-screen" class="screen-layer">
+    <div class="lock-top-bar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg class="brand-icon-lg" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="fcLockGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="55%" stop-color="#0a1e3d"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="120" rx="28" fill="url(#fcLockGrad)"/>
+          <rect x="4" y="4" width="112" height="112" rx="24" fill="none" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="3"/>
+          <path d="M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z" fill="none" stroke="#e0f2fe" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z" fill="#38bdf8" fill-opacity="0.32" stroke="#38bdf8" stroke-width="3.5"/>
+        </svg>
+        <span style="font-size:15px;font-weight:800;letter-spacing:-0.01em;color:#fff;">FamCall HUD</span>
+      </div>
+      <span class="status-pill" style="color:#38bdf8;">LOCKED</span>
+    </div>
+
+    <div class="lock-center">
+      <div id="lock-avatar" class="avatar-circle">FC</div>
+      <h2 id="lock-name">User</h2>
+      <span id="lock-id" class="id-chip">FAM-0000</span>
+      <p id="pin-msg">Enter your 4-digit personal PIN</p>
+
+      <div id="pin-dots" class="pin-dots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <div class="glass-strong pin-grid">
+        <button type="button" data-digit="1" class="btn btn-ghost pin-key">1</button>
+        <button type="button" data-digit="2" class="btn btn-ghost pin-key">2</button>
+        <button type="button" data-digit="3" class="btn btn-ghost pin-key">3</button>
+        <button type="button" data-digit="4" class="btn btn-ghost pin-key">4</button>
+        <button type="button" data-digit="5" class="btn btn-ghost pin-key">5</button>
+        <button type="button" data-digit="6" class="btn btn-ghost pin-key">6</button>
+        <button type="button" data-digit="7" class="btn btn-ghost pin-key">7</button>
+        <button type="button" data-digit="8" class="btn btn-ghost pin-key">8</button>
+        <button type="button" data-digit="9" class="btn btn-ghost pin-key">9</button>
+        <button type="button" id="btn-pin-clear" class="btn btn-ghost pin-key" style="font-size:clamp(14px,2dvh,17px);color:var(--text-secondary);">CLR</button>
+        <button type="button" data-digit="0" class="btn btn-ghost pin-key">0</button>
+        <button type="button" id="btn-pin-back" class="btn btn-ghost pin-key" style="color:#38bdf8;" aria-label="Backspace">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="lock-footer">
+      <button type="button" id="btn-forgot-pin" style="font-size:12px;font-weight:600;color:var(--text-secondary);text-decoration:underline;padding:4px 8px;">Forgot PIN? Reset Device</button>
+      <p class="credit">Designed by: Mohammad Firoz Alam</p>
+    </div>
+  </section>
+
+  <!-- ==================== SCREEN LAYER 3: PINNED-HEADER 1-ON-1 CHAT ==================== -->
+  <section id="chat-screen" class="screen-layer">
+    <header class="chat-header">
+      <button type="button" id="btn-chat-back" class="btn btn-ghost btn-icon-sq" style="border-radius:12px;" title="Back">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      </button>
+      <button type="button" id="btn-chat-edit" class="chat-peer-btn" title="Edit Contact Photo & Name">
+        <div id="chat-peer-avatar" class="avatar-circle" style="width:38px;height:38px;font-size:13px;flex-shrink:0;">FC</div>
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="chat-peer-name" style="font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Contact</span>
+            <span id="chat-peer-id" class="mono" style="font-size:10px;color:#38bdf8;flex-shrink:0;">FAM-0000</span>
+          </div>
+          <div id="chat-peer-status" style="font-size:11px;color:var(--text-secondary);margin-top:1px;">• Offline</div>
+        </div>
+      </button>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button type="button" id="btn-chat-audio" class="btn btn-emerald" style="width:36px;height:36px;border-radius:11px;" title="Audio Call">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <button type="button" id="btn-chat-video" class="btn btn-cyan" style="width:36px;height:36px;border-radius:11px;" title="Video Call">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="chat-messages" class="chat-messages"></div>
+
+    <div class="chat-composer">
+      <form id="form-chat-send" class="inline-form">
+        <input id="input-chat-msg" type="text" autocomplete="off" placeholder="Type a message..." class="hud-input" />
+        <button type="submit" class="btn btn-cyan" style="width:42px;height:42px;border-radius:12px;flex-shrink:0;" title="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==================== CALL LAYER: FULL-SCREEN AUDIO / VIDEO CALL ==================== -->
+  <section id="call-overlay" class="call-layer">
+    <video id="remote-video" autoplay playsinline class="hidden"></video>
+
+    <div class="call-top-bar">
+      <span id="call-type-badge" class="status-pill" style="color:#7dd3fc;">1-on-1 Video</span>
+      <span id="call-timer" class="status-pill hidden" style="color:#fff;">00:00</span>
+    </div>
+
+    <div class="call-center">
+      <div id="call-avatar-stage">
+        <div id="call-avatar" class="call-avatar-lg">FC</div>
+        <h2 id="call-name" style="margin:0;font-size:24px;font-weight:800;color:#fff;">Family Member</h2>
+        <p id="call-id-sub" class="mono" style="margin:5px 0 0;font-size:12px;color:#38bdf8;">FAM-0000</p>
+        <p id="call-status" style="margin:8px 0 0;font-size:13px;font-weight:600;color:#94a3b8;">Calling...</p>
+      </div>
+
+      <div id="local-pip" class="hidden">
+        <video id="local-video" autoplay playsinline muted class="mirror hidden"></video>
+        <div id="local-pip-fallback" style="text-align:center;font-size:11px;color:var(--text-secondary);">YOU<br/>Cam Off</div>
+      </div>
+    </div>
+
+    <!-- In-Call Quick Chat Drawer -->
+    <div id="incall-chat-drawer" class="glass-strong">
+      <div class="row-between" style="padding:10px 14px;border-bottom:1px solid rgba(56,189,248,0.2);">
+        <span class="section-title" style="color:#38bdf8;">In-Call Chat</span>
+        <button type="button" id="btn-close-incall-chat" class="btn btn-ghost" style="width:26px;height:26px;border-radius:8px;">✕</button>
+      </div>
+      <div id="incall-messages" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:110px;"></div>
+      <form id="form-incall-send" class="inline-form" style="padding:8px;border-top:1px solid rgba(56,189,248,0.18);">
+        <input id="input-incall-msg" type="text" autocomplete="off" placeholder="Quick message..." class="hud-input" style="padding:8px 12px;" />
+        <button type="submit" class="btn btn-cyan" style="padding:8px 12px;">Send</button>
+      </form>
+    </div>
+
+    <div id="call-incoming-bar" class="call-incoming-controls hidden">
+      <button type="button" id="btn-call-decline" class="call-ctrl-btn" style="color:#fca5a5;">
+        <span class="call-ctrl-circle btn-rose" style="width:62px;height:62px;font-size:20px;">✕</span>
+        <span>Decline</span>
+      </button>
+      <button type="button" id="btn-call-accept" class="call-ctrl-btn" style="color:#6ee7b7;">
+        <span class="call-ctrl-circle btn-emerald" style="width:62px;height:62px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </span>
+        <span>Accept</span>
+      </button>
+    </div>
+
+    <div id="call-active-bar" class="call-active-controls">
+      <div class="glass-strong call-dock">
+        <button type="button" id="btn-call-mute" class="call-ctrl-btn">
+          <span class="call-ctrl-circle btn-ghost">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          </span>
+          <span>Mute</span>
+        </button>
+        <button type="button" id="btn-call-cam" class="call-ctrl-btn">
+          <span class="call-ctrl-circle btn-ghost">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </span>
+          <span>Cam</span>
+        </button>
+        <button type="button" id="btn-call-flip" class="call-ctrl-btn">
+          <span class="call-ctrl-circle btn-ghost">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          </span>
+          <span>Flip</span>
+        </button>
+        <button type="button" id="btn-call-chat" class="call-ctrl-btn">
+          <span class="call-ctrl-circle btn-ghost">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span>Chat</span>
+        </button>
+        <button type="button" id="btn-call-end" class="call-ctrl-btn" style="color:#fca5a5;">
+          <span class="call-ctrl-circle btn-rose" style="font-size:16px;font-weight:800;">✕</span>
+          <span>End</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MODAL: EDIT CONTACT ==================== -->
+  <section id="contact-modal" class="modal-backdrop">
+    <div class="glass-strong modal-box">
+      <div class="row-between">
+        <span class="section-title" style="color:#38bdf8;">Edit Contact</span>
+        <button type="button" id="btn-close-contact-modal" class="btn btn-ghost btn-icon-sq" style="width:30px;height:30px;">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <button type="button" id="btn-cm-cam" class="avatar-btn" title="Change Contact Photo">
+          <div id="cm-avatar" class="avatar-circle" style="width:86px;height:86px;font-size:26px;">FC</div>
+          <span class="cam-badge" style="width:26px;height:26px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </span>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="cm-id" class="id-chip">FAM-0000</span>
+          <button type="button" id="btn-cm-copy" class="btn btn-ghost" style="padding:4px 10px;font-size:11px;">Copy</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <button type="button" id="btn-cm-change-photo" class="btn btn-cyan" style="padding:9px;">Change Photo</button>
+        <button type="button" id="btn-cm-remove-photo" class="btn btn-ghost" style="padding:9px;color:#f87171;">Remove Photo</button>
+      </div>
+
+      <form id="form-cm-nick" class="inline-form">
+        <input id="cm-nick-input" type="text" maxlength="24" placeholder="Contact Nickname" class="hud-input" />
+        <button type="submit" class="btn btn-ghost" style="padding:10px 14px;color:#38bdf8;">Save</button>
+      </form>
+
+      <div class="grid-2" style="padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
+        <button type="button" id="btn-cm-audio" class="btn btn-emerald" style="padding:10px;">Audio Call</button>
+        <button type="button" id="btn-cm-video" class="btn btn-cyan" style="padding:10px;">Video Call</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MODAL: INSTALL PWA ==================== -->
+  <section id="install-modal" class="modal-backdrop">
+    <div class="glass-strong modal-box">
+      <div class="row-between">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff;">Install FamCall HUD</div>
+          <div style="font-size:11px;color:var(--text-secondary);">Full-screen Home Screen app</div>
+        </div>
+        <button type="button" id="btn-close-install" class="btn btn-ghost btn-icon-sq" style="width:30px;height:30px;">✕</button>
+      </div>
+
+      <div class="grid-2">
+        <button type="button" id="btn-os-android" class="btn btn-cyan" style="padding:8px;">Android Chrome</button>
+        <button type="button" id="btn-os-ios" class="btn btn-ghost" style="padding:8px;">iPhone Safari</button>
+      </div>
+
+      <div id="guide-android" style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;">
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">1. Tap the top-right <b>⋮</b> menu in Chrome.</div>
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">2. Tap <b>"Install app"</b> or <b>"Add to Home screen"</b>.</div>
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">3. Tap <b>Install</b> to launch FamCall full-screen.</div>
+      </div>
+
+      <div id="guide-ios" class="hidden" style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#e2e8f0;">
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">1. Tap the <b>Share icon (↑)</b> at the bottom of Safari.</div>
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">2. Scroll down and tap <b>"Add to Home Screen"</b>.</div>
+        <div class="glass" style="padding:10px 12px;border-radius:12px;">3. Tap <b>Add</b> in the top-right corner.</div>
+      </div>
+
+      <button type="button" id="btn-done-install" class="btn btn-cyan" style="padding:10px;width:100%;">Done</button>
+    </div>
+  </section>
+
+  <!-- ==================== MODAL: CONFIRM RESET ==================== -->
+  <section id="reset-modal" class="modal-backdrop">
+    <div class="glass-strong modal-box" style="text-align:center;">
+      <div style="font-size:16px;font-weight:800;color:#fff;">Reset Local Data?</div>
+      <p style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5;">This removes your profile, PIN, contacts, photos, and chat history from this device.</p>
+      <div class="grid-2">
+        <button type="button" id="btn-cancel-reset" class="btn btn-ghost" style="padding:10px;">Cancel</button>
+        <button type="button" id="btn-confirm-reset" class="btn btn-rose" style="padding:10px;">Reset All</button>
+      </div>
+    </div>
+  </section>
 
   <!-- ==================== APPLICATION LOGIC ==================== -->
   <script>
@@ -1500,22 +1590,117 @@
       const $ = (id) => document.getElementById(id);
       const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
 
-      const STORAGE_KEY = 'famcall_hud_v6';
+      const STORAGE_KEY = 'famcall_hud_v7';
       const IDLE_MS = 3 * 60 * 1000;
       const PURGE_IDS = new Set(['FAM-DEMO', 'FAM-BOT1']);
 
-      /* ---------- 1. VISUAL VIEWPORT SYNC (PINNED CHAT HEADER) ---------- */
+      /* ---------- 1. SAFE HELPERS ---------- */
+      function esc(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function cleanId(raw) {
+        return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+      }
+
+      function genId() {
+        return 'FAM-' + Math.floor(1000 + Math.random() * 9000);
+      }
+
+      function toPeerId(fid) {
+        return 'famcall-hud-p2p-' + cleanId(fid).toLowerCase();
+      }
+
+      function fromPeerId(pid) {
+        return cleanId(String(pid || '').replace(/^famcall-hud-p2p-/i, ''));
+      }
+
+      function initials(name) {
+        const parts = String(name || 'FC').trim().split(/\s+/);
+        return parts.length >= 2
+          ? (parts[0][0] + parts[1][0]).toUpperCase()
+          : String(name || 'FC').slice(0, 2).toUpperCase();
+      }
+
+      function fmtTime(ts) {
+        try {
+          return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return ''; }
+      }
+
+      function fmtDur(sec) {
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return m + ':' + s;
+      }
+
+      /* Pure-JS 32-bit hash (works on https, http, file://, content://) */
+      function hashPin(pin) {
+        const s = 'famcall-hud-v7::' + String(pin || '');
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = Math.imul(h, 16777619) >>> 0;
+        }
+        return h.toString(16).padStart(8, '0');
+      }
+
+      /* ---------- 2. PWA SERVICE WORKER & CANVAS PNG ICON GENERATOR ---------- */
+      function initPWA() {
+        try {
+          if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+          }
+        } catch (e) {}
+      }
+
+      function downloadAppIconPng(size) {
+        try {
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 120 120">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#050914"/>
+                <stop offset="55%" stop-color="#0a1e3d"/>
+                <stop offset="100%" stop-color="#0284c7"/>
+              </linearGradient>
+            </defs>
+            <rect width="120" height="120" fill="url(#g)"/>
+            <rect x="6" y="6" width="108" height="108" rx="24" fill="none" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="2.5"/>
+            <path d="M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z" fill="none" stroke="#e0f2fe" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z" fill="#38bdf8" fill-opacity="0.32" stroke="#38bdf8" stroke-width="3.4"/>
+          </svg>`;
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, size, size);
+            const a = document.createElement('a');
+            a.download = 'icon-' + size + '.png';
+            a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast('Downloaded icon-' + size + '.png', 'success');
+          };
+          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        } catch (e) {
+          toast('Could not generate icon', 'error');
+        }
+      }
+
+      /* ---------- 3. VISUAL VIEWPORT SYNC (PINNED CHAT HEADER) ---------- */
       function syncChatViewport() {
         try {
-          const chatView = $('chat-view');
-          if (!chatView || !chatView.classList.contains('open')) return;
-          if (window.innerWidth < 500 && window.visualViewport) {
-            chatView.style.height = Math.round(window.visualViewport.height) + 'px';
-            chatView.style.top = Math.round(window.visualViewport.offsetTop) + 'px';
+          const chatScreen = $('chat-screen');
+          if (!chatScreen || !chatScreen.classList.contains('active')) return;
+          if (window.visualViewport) {
+            chatScreen.style.height = Math.round(window.visualViewport.height) + 'px';
+            chatScreen.style.top = Math.round(window.visualViewport.offsetTop) + 'px';
             if (window.scrollY !== 0) window.scrollTo(0, 0);
-          } else {
-            chatView.style.height = '';
-            chatView.style.top = '';
           }
           const box = $('chat-messages');
           if (box) box.scrollTop = box.scrollHeight;
@@ -1528,49 +1713,14 @@
       }
       window.addEventListener('resize', syncChatViewport);
 
-      /* ---------- 2. DYNAMIC PWA MANIFEST ---------- */
-      function initPWA() {
-        try {
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#050914"/><circle cx="256" cy="256" r="154" fill="none" stroke="#38bdf8" stroke-width="20"/><text x="256" y="290" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="144" fill="#f8fafc">FC</text></svg>`;
-          const iconUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-          const addLink = (rel, href) => { const l = document.createElement('link'); l.rel = rel; l.href = href; document.head.appendChild(l); };
-          addLink('apple-touch-icon', iconUrl);
-          addLink('icon', iconUrl);
-          const manifest = {
-            name: 'FamCall — Family Connect',
-            short_name: 'FamCall',
-            start_url: window.location.href.split('?')[0],
-            display: 'standalone',
-            background_color: '#050914',
-            theme_color: '#050914',
-            icons: [{ src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }]
-          };
-          addLink('manifest', URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' })));
-        } catch (e) {}
-      }
-
-      /* ---------- 3. PURE-JS PIN HASH ---------- */
-      function hashPin(pin) {
-        const s = 'famcall-v6::' + String(pin || '');
-        let h1 = 0xdeadbeef ^ s.length, h2 = 0x41c6ce57 ^ s.length;
-        for (let i = 0; i < s.length; i++) {
-          const c = s.charCodeAt(i);
-          h1 = Math.imul(h1 ^ c, 2654435761);
-          h2 = Math.imul(h2 ^ c, 1597334677);
-        }
-        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-        return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
-      }
-
-      /* ---------- 4. STATE & STORAGE ---------- */
+      /* ---------- 4. STATE & SAFE LOCALSTORAGE ---------- */
       const state = {
-        myProfile: null, // { id, name, pinHash, avatar }
-        contacts: {},    // { [id]: { id, name, avatar, online, lastMessage, lastTime, unread } }
-        incomingRequests: [], // [{ fromId, fromName, fromAvatar, timestamp }]
-        sentRequests: [],     // [{ id, timestamp }]
-        messages: {},         // { [id]: [{ fromMe, text, ts, delivered }] }
-        callHistory: [],      // [{ peerId, peerName, callType, direction, duration, ts }]
+        myProfile: null,
+        contacts: {},
+        incomingRequests: [],
+        sentRequests: [],
+        messages: {},
+        callHistory: [],
         ringtoneEnabled: true,
 
         setupTempAvatar: null,
@@ -1579,7 +1729,6 @@
         isLocked: false,
         enteredPin: '',
         activeTab: 'chats',
-        filter: 'all',
         search: '',
         activeChatId: null,
         typingTimers: {},
@@ -1589,11 +1738,11 @@
         peer: null,
         peerStatus: 'connecting',
         conns: {},
-        packetQueue: {}, // { [targetId]: [packet, ...] }
+        packetQueue: {},
         pingTimer: null,
 
         call: {
-          status: 'IDLE', // 'IDLE' | 'OUTGOING_RINGING' | 'INCOMING_RINGING' | 'CONNECTED'
+          status: 'IDLE',
           callId: null,
           direction: 'outgoing',
           callType: 'video',
@@ -1612,51 +1761,23 @@
         }
       };
 
-      function cleanId(id) {
-        return String(id || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-      }
-      function toPeerId(fid) { return 'famcall-hud-' + cleanId(fid); }
-      function fromPeerId(pid) { return cleanId(String(pid || '').replace(/^famcall-hud-/i, '')); }
-      function genId() { return 'FAM-' + Math.floor(1000 + Math.random() * 9000); }
-      function initials(name) {
-        return String(name || 'FC').trim().split(/\s+/).map((w) => w[0] || '').join('').toUpperCase().slice(0, 2) || 'FC';
-      }
-      function fmtTime(ts) {
-        try { return ts ? new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''; } catch (e) { return ''; }
-      }
-      function fmtDur(sec) {
-        return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
-      }
-      function esc(str) {
-        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
-
       function saveData() {
         try {
-          const contactsToSave = {};
-          Object.values(state.contacts).forEach((c) => {
-            if (c && c.id && !PURGE_IDS.has(cleanId(c.id))) {
-              contactsToSave[c.id] = { ...c, online: false };
-            }
-          });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          const payload = {
             myProfile: state.myProfile,
-            contacts: contactsToSave,
+            contacts: state.contacts,
             incomingRequests: state.incomingRequests,
             sentRequests: state.sentRequests,
             messages: state.messages,
-            callHistory: state.callHistory,
+            callHistory: state.callHistory.slice(0, 50),
             ringtoneEnabled: state.ringtoneEnabled
-          }));
-        } catch (e) {
-          toast('Storage full — try a smaller photo', 'error');
-        }
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (e) {}
       }
 
       function loadData() {
         try {
-          // Purge any legacy v5 demo data keys if present
-          try { localStorage.removeItem('famcall_spatial_hud_v5'); } catch (e) {}
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) return;
           const d = JSON.parse(raw);
@@ -1757,7 +1878,7 @@
         });
       }
 
-      /* ---------- 6. SCREENS & AUTO-LOCK ---------- */
+      /* ---------- 6. STRICT SINGLE-SCREEN VISIBILITY & AUTO-LOCK ---------- */
       function resetIdle() {
         clearTimeout(state.idleTimer);
         if (!state.myProfile || state.isLocked || state.call.status !== 'IDLE') return;
@@ -1770,9 +1891,9 @@
 
       function showSetupScreen() {
         $('setup-id').value = genId();
-        $('lock-screen').classList.remove('open');
-        $('chat-view').classList.remove('open');
-        $('setup-screen').classList.add('open');
+        $('lock-screen').classList.remove('active');
+        $('chat-screen').classList.remove('active');
+        $('setup-screen').classList.add('active');
       }
 
       function showLockScreen(reason) {
@@ -1784,9 +1905,9 @@
         $('lock-name').textContent = state.myProfile.name;
         $('lock-id').textContent = state.myProfile.id;
         $('pin-msg').textContent = reason || 'Enter your 4-digit personal PIN';
-        $('setup-screen').classList.remove('open');
-        $('chat-view').classList.remove('open');
-        $('lock-screen').classList.add('open');
+        $('setup-screen').classList.remove('active');
+        $('chat-screen').classList.remove('active');
+        $('lock-screen').classList.add('active');
       }
 
       function unlockAndEnterApp() {
@@ -1794,8 +1915,8 @@
         state.enteredPin = '';
         updatePinDots();
         saveData();
-        $('setup-screen').classList.remove('open');
-        $('lock-screen').classList.remove('open');
+        $('setup-screen').classList.remove('active');
+        $('lock-screen').classList.remove('active');
         renderAll();
         resetIdle();
         checkUrlInvite();
@@ -1836,7 +1957,7 @@
         } catch (e) {}
       }
 
-      /* ---------- 7. BULLETPROOF PEERJS PACKET QUEUE & FRIEND SYNC ---------- */
+      /* ---------- 7. PEERJS P2P PACKET QUEUE & FRIEND SYNC ---------- */
       function setP2PStatus(status, label) {
         state.peerStatus = status;
         const dot = $('p2p-dot');
@@ -1872,12 +1993,12 @@
           });
           peer.on('connection', bindDataConn);
           peer.on('call', onIncomingMediaCall);
-          peer.on('disconnected', () => setP2PStatus('offline', 'Reconnect'));
+          peer.on('disconnected', () => setP2PStatus('offline', 'Offline'));
           peer.on('error', (err) => {
             if (err && err.type === 'peer-unavailable') {
               toast('User is currently offline', 'error');
             } else {
-              setP2PStatus('offline', 'Reconnect');
+              setP2PStatus('offline', 'Offline');
             }
           });
 
@@ -1901,7 +2022,6 @@
               renderContacts();
               if (state.activeChatId === remoteId) updateChatHeaderStatus(state.contacts[remoteId]);
             }
-            // Exchange HELLO_SYNC immediately on every open connection
             try {
               conn.send({
                 type: 'HELLO_SYNC',
@@ -1911,8 +2031,6 @@
                 isFriend: !!state.contacts[remoteId]
               });
             } catch (e) {}
-
-            // Flush any queued outbound packets for this peer
             flushPacketQueue(remoteId, conn);
           };
 
@@ -1938,24 +2056,18 @@
         const q = state.packetQueue[targetId];
         if (!q || !q.length || !conn || !conn.open) return;
         const copy = q.splice(0, q.length);
-        copy.forEach((pkt) => {
-          try { conn.send(pkt); } catch (e) {}
-        });
+        copy.forEach((pkt) => { try { conn.send(pkt); } catch (e) {} });
       }
 
       function sendPeerPacket(targetIdRaw, packet) {
         const targetId = cleanId(targetIdRaw);
         if (!targetId || !state.myProfile) return;
-
         const existing = state.conns[targetId];
         if (existing && existing.open) {
           try { existing.send(packet); return; } catch (e) {}
         }
-
-        // Queue packet so it flushes as soon as connection opens
         if (!state.packetQueue[targetId]) state.packetQueue[targetId] = [];
         state.packetQueue[targetId].push(packet);
-
         if (!state.peer || !state.peer.open) return;
         try {
           const conn = state.peer.connect(toPeerId(targetId), {
@@ -2012,7 +2124,6 @@
 
         switch (pkt.type) {
           case 'HELLO_SYNC': {
-            // If they are in our sentRequests and they already have us as a friend, auto-complete acceptance!
             const wasPending = state.sentRequests.some((s) => s.id === fromId);
             if (pkt.isFriend && wasPending) {
               state.sentRequests = state.sentRequests.filter((s) => s.id !== fromId);
@@ -2022,7 +2133,6 @@
               if (c) toast(c.name + ' accepted your request!', 'success');
               return;
             }
-            // Otherwise update online status / name / avatar if already a contact
             if (state.contacts[fromId]) {
               const c = state.contacts[fromId];
               c.online = true;
@@ -2037,7 +2147,6 @@
 
           case 'FRIEND_REQUEST': {
             if (state.contacts[fromId]) {
-              // Already friends — immediately send back FRIEND_ACCEPT so their side clears Pending
               sendPeerPacket(fromId, {
                 type: 'FRIEND_ACCEPT',
                 fromId: state.myProfile.id,
@@ -2094,6 +2203,7 @@
             saveData();
             renderContacts();
             if (state.activeChatId === fromId) renderMessages(fromId);
+            if (state.call.status !== 'IDLE' && state.call.remoteId === fromId) renderInCallMessages(fromId);
             break;
           }
 
@@ -2116,7 +2226,6 @@
             break;
           }
 
-          // ===== STRICT CALL SIGNALING =====
           case 'CALL_INVITE': {
             if (state.call.status === 'INCOMING_RINGING' && pkt.callId === state.call.callId) {
               if (pkt.callerName) {
@@ -2175,7 +2284,7 @@
         $('chat-peer-id').textContent = contact.id;
         updateChatHeaderStatus(contact);
         renderMessages(contact.id);
-        $('chat-view').classList.add('open');
+        $('chat-screen').classList.add('active');
         syncChatViewport();
       }
 
@@ -2199,6 +2308,7 @@
         saveData();
         renderContacts();
         if (state.activeChatId === targetId) renderMessages(targetId);
+        if (state.call.status !== 'IDLE' && state.call.remoteId === targetId) renderInCallMessages(targetId);
 
         sendPeerPacket(targetId, {
           type: 'CHAT_MSG',
@@ -2217,7 +2327,7 @@
         setAvatar($('cm-avatar'), c.avatar, c.name);
         $('cm-id').textContent = c.id;
         $('cm-nick-input').value = c.name;
-        $('contact-modal').classList.add('open');
+        $('contact-modal').classList.add('active');
       }
 
       function refreshContactViews(c) {
@@ -2232,7 +2342,7 @@
         }
       }
 
-      /* ---------- 9. WEBRTC CALLING (EXACT NAMES & STRICT STATE MACHINE) ---------- */
+      /* ---------- 9. WEBRTC CALLING (STRICT STATE MACHINE) ---------- */
       let audioCtx = null;
       function playRing() {
         if (!state.ringtoneEnabled) return;
@@ -2269,12 +2379,14 @@
         $('call-name').textContent = remoteName;
         $('call-id-sub').textContent = remoteId;
         $('call-status').textContent = direction === 'incoming' ? 'Incoming Call...' : 'Calling...';
+        $('call-status').style.color = '#94a3b8';
         $('call-timer').textContent = '00:00';
         $('call-timer').classList.add('hidden');
         $('local-pip').classList.toggle('hidden', callType !== 'video');
         $('call-incoming-bar').classList.toggle('hidden', direction !== 'incoming');
         $('call-active-bar').classList.toggle('hidden', direction === 'incoming');
-        $('call-overlay').classList.add('open');
+        $('incall-chat-drawer').classList.remove('active');
+        $('call-overlay').classList.add('active');
         playRing();
         state.call.ringId = setInterval(playRing, 2200);
       }
@@ -2303,7 +2415,6 @@
       function beginConnectedState(expectedCallId) {
         if (state.call.status !== 'OUTGOING_RINGING' && state.call.status !== 'INCOMING_RINGING') return;
         if (expectedCallId && state.call.callId !== expectedCallId) return;
-
         stopRing();
         clearTimeout(state.call.noAnswerTimerId);
         state.call.noAnswerTimerId = null;
@@ -2338,9 +2449,7 @@
             rv.classList.remove('hidden');
             $('call-avatar-stage').classList.add('hidden');
           }
-          if (state.call.status !== 'CONNECTED') {
-            beginConnectedState(expectedCallId);
-          }
+          if (state.call.status !== 'CONNECTED') beginConnectedState(expectedCallId);
         });
 
         mc.on('close', () => {
@@ -2362,14 +2471,11 @@
 
       async function startOutgoingCall(targetIdRaw, callType) {
         const targetId = cleanId(targetIdRaw);
-        if (!targetId || targetId === state.myProfile.id) return;
-        if (state.call.status !== 'IDLE') return;
+        if (!targetId || targetId === state.myProfile.id || state.call.status !== 'IDLE') return;
         if (!state.peer || !state.peer.open) {
           toast('P2P offline — tap status pill to reconnect', 'error');
           return;
         }
-
-        // ALWAYS display the REMOTE contact's info on caller's screen (never myProfile)
         const remoteContact = state.contacts[targetId];
         const remoteName = (remoteContact && remoteContact.name) ? remoteContact.name : targetId;
         const remoteAvatar = (remoteContact && remoteContact.avatar) ? remoteContact.avatar : null;
@@ -2392,16 +2498,12 @@
         };
 
         showCallUI(targetId, remoteName, remoteAvatar, callType, 'outgoing');
-
         const stream = await getLocalMedia(callType === 'video');
         if (state.call.status !== 'OUTGOING_RINGING' || state.call.callId !== callId) {
           if (stream) { try { stream.getTracks().forEach((t) => t.stop()); } catch (e) {} }
           return;
         }
-        if (!stream) {
-          cleanupCall({ logStatus: 'cancelled' });
-          return;
-        }
+        if (!stream) { cleanupCall({ logStatus: 'cancelled' }); return; }
 
         try {
           const mc = state.peer.call(toPeerId(targetId), stream, {
@@ -2450,7 +2552,6 @@
             return;
           }
 
-          // ALWAYS display the CALLER's info on receiver's screen (never myProfile)
           const contact = state.contacts[callerId];
           const callerName = (contact && contact.name) || m.callerName || callerId;
           const callerAvatar = (contact && contact.avatar) || m.callerAvatar || null;
@@ -2473,7 +2574,6 @@
           };
 
           showCallUI(callerId, callerName, callerAvatar, callType, 'incoming');
-
           mc.on('close', () => {
             if (state.call.status === 'INCOMING_RINGING' && state.call.callId === callId) {
               cleanupCall({ logStatus: 'missed', toastMsg: 'Call cancelled' });
@@ -2495,10 +2595,7 @@
           if (stream) { try { stream.getTracks().forEach((t) => t.stop()); } catch (e) {} }
           return;
         }
-        if (!stream) {
-          rejectIncomingCall();
-          return;
-        }
+        if (!stream) { rejectIncomingCall(); return; }
         if (state.call.mediaCall) {
           wireMediaCall(state.call.mediaCall, isVideo, callId);
           state.call.mediaCall.answer(stream);
@@ -2509,9 +2606,7 @@
 
       function rejectIncomingCall() {
         if (state.call.status !== 'INCOMING_RINGING') return;
-        const remoteId = state.call.remoteId;
-        const callId = state.call.callId;
-        sendPeerPacket(remoteId, { type: 'CALL_REJECTED', callId });
+        sendPeerPacket(state.call.remoteId, { type: 'CALL_REJECTED', callId: state.call.callId });
         cleanupCall({ logStatus: 'declined', toastMsg: 'Call declined' });
       }
 
@@ -2576,10 +2671,10 @@
         $('remote-video').srcObject = null;
         $('remote-video').classList.add('hidden');
         $('call-avatar-stage').classList.remove('hidden');
-        $('call-status').style.color = '#94a3b8';
         $('call-timer').textContent = '00:00';
         $('call-timer').classList.add('hidden');
-        $('call-overlay').classList.remove('open');
+        $('incall-chat-drawer').classList.remove('active');
+        $('call-overlay').classList.remove('active');
 
         state.call.remoteId = null;
         state.call.seconds = 0;
@@ -2627,13 +2722,11 @@
         const q = state.search.toLowerCase();
         const arr = Object.values(state.contacts).filter((c) => {
           if (q && !c.name.toLowerCase().includes(q) && !c.id.toLowerCase().includes(q)) return false;
-          if (state.filter === 'online') return !!c.online;
-          if (state.filter === 'unread') return (c.unread || 0) > 0;
           return true;
         });
 
         if (arr.length === 0) {
-          list.innerHTML = `<div class="glass empty-state">No family members yet.<br/>Open the <b style="color:#38bdf8;">Requests</b> tab to connect via Family ID.</div>`;
+          list.innerHTML = `<div class="glass empty-state">No family members connected yet.<br/>Open the <b style="color:#38bdf8;">Requests</b> tab to add someone via Family ID.</div>`;
           return;
         }
 
@@ -2642,6 +2735,7 @@
           card.className = 'glass contact-card';
           card.dataset.fid = c.id;
           const avatarHtml = c.avatar ? `<img src="${c.avatar}" alt="${esc(c.name)}" />` : esc(initials(c.name));
+          const signalPct = c.online ? '92%' : '22%';
 
           card.innerHTML = `
             <div class="card-top">
@@ -2661,6 +2755,7 @@
               </div>
             </div>
             <p class="card-preview">${esc(c.lastMessage || 'Tap to open 1-on-1 chat')}</p>
+            <div class="signal-bar-track"><div class="signal-bar-fill" style="width:${signalPct};"></div></div>
             <div class="card-actions">
               <button type="button" data-act="audio" class="btn btn-ghost card-act-btn" style="color:#10b981;" title="Audio Call">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -2696,6 +2791,19 @@
               </div>
             </div>
           `;
+          box.appendChild(row);
+        });
+        box.scrollTop = box.scrollHeight;
+      }
+
+      function renderInCallMessages(fid) {
+        const box = $('incall-messages');
+        if (!box) return;
+        box.innerHTML = '';
+        (state.messages[fid] || []).slice(-12).forEach((m) => {
+          const row = document.createElement('div');
+          row.className = 'msg-row ' + (m.fromMe ? 'me' : 'them');
+          row.innerHTML = `<div class="msg-bubble ${m.fromMe ? 'me' : 'them'}" style="padding:7px 11px;font-size:12px;">${esc(m.text)}</div>`;
           box.appendChild(row);
         });
         box.scrollTop = box.scrollHeight;
@@ -2811,7 +2919,7 @@
         }
         const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         setGuideOS(ios ? 'ios' : 'android');
-        $('install-modal').classList.add('open');
+        $('install-modal').classList.add('active');
       }
 
       window.addEventListener('beforeinstallprompt', (e) => {
@@ -2884,11 +2992,12 @@
         document.querySelectorAll('.pin-key[data-digit]').forEach((b) => b.addEventListener('click', () => pushPinDigit(b.dataset.digit)));
         on('btn-pin-clear', 'click', () => { state.enteredPin = ''; updatePinDots(); });
         on('btn-pin-back', 'click', () => { state.enteredPin = state.enteredPin.slice(0, -1); updatePinDots(); });
-        on('btn-forgot-pin', 'click', () => $('reset-modal').classList.add('open'));
+        on('btn-forgot-pin', 'click', () => $('reset-modal').classList.add('active'));
         document.addEventListener('keydown', (e) => {
           if (!state.isLocked) return;
           if (/^[0-9]$/.test(e.key)) pushPinDigit(e.key);
           else if (e.key === 'Backspace') { state.enteredPin = state.enteredPin.slice(0, -1); updatePinDots(); }
+          else if (e.key === 'Escape') { state.enteredPin = ''; updatePinDots(); }
         });
 
         // Header & Nav
@@ -2896,20 +3005,10 @@
         on('btn-p2p-status', 'click', () => { if (state.peerStatus !== 'online') initPeer(); else copyText(state.myProfile.id); });
         on('btn-header-install', 'click', onInstallClick);
         on('btn-header-lock', 'click', () => showLockScreen('Locked manually'));
-        on('btn-goto-add', 'click', () => switchTab('requests'));
         document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
         // Chats Tab
         on('search-input', 'input', (e) => { state.search = e.target.value; renderContacts(); });
-        document.querySelectorAll('.filter-pill[data-filter]').forEach((b) => {
-          b.addEventListener('click', () => {
-            state.filter = b.dataset.filter;
-            document.querySelectorAll('.filter-pill[data-filter]').forEach((x) => {
-              x.className = 'btn filter-pill ' + (x.dataset.filter === state.filter ? 'btn-cyan' : 'btn-ghost');
-            });
-            renderContacts();
-          });
-        });
         on('contacts-list', 'click', (e) => {
           const card = e.target.closest('[data-fid]');
           if (!card) return;
@@ -2925,8 +3024,8 @@
           openChat(c);
         });
 
-        // Chat View
-        on('btn-chat-back', 'click', () => { $('chat-view').classList.remove('open'); state.activeChatId = null; });
+        // Chat Screen
+        on('btn-chat-back', 'click', () => { $('chat-screen').classList.remove('active'); state.activeChatId = null; });
         on('btn-chat-edit', 'click', () => { if (state.activeChatId) openContactModal(state.activeChatId); });
         on('btn-chat-audio', 'click', () => { if (state.activeChatId) startOutgoingCall(state.activeChatId, 'audio'); });
         on('btn-chat-video', 'click', () => { if (state.activeChatId) startOutgoingCall(state.activeChatId, 'video'); });
@@ -2941,7 +3040,7 @@
         });
 
         // Edit Contact Modal
-        on('btn-close-contact-modal', 'click', () => $('contact-modal').classList.remove('open'));
+        on('btn-close-contact-modal', 'click', () => $('contact-modal').classList.remove('active'));
         on('btn-cm-cam', 'click', () => pickPhoto(state.editContactId));
         on('btn-cm-change-photo', 'click', () => pickPhoto(state.editContactId));
         on('btn-cm-remove-photo', 'click', () => {
@@ -2957,12 +3056,12 @@
         });
         on('btn-cm-audio', 'click', () => {
           const id = state.editContactId;
-          $('contact-modal').classList.remove('open');
+          $('contact-modal').classList.remove('active');
           if (id) startOutgoingCall(id, 'audio');
         });
         on('btn-cm-video', 'click', () => {
           const id = state.editContactId;
-          $('contact-modal').classList.remove('open');
+          $('contact-modal').classList.remove('active');
           if (id) startOutgoingCall(id, 'video');
         });
 
@@ -3041,7 +3140,8 @@
           toast('Photo removed', 'info');
         });
         on('btn-copy-profile-id', 'click', () => copyText(state.myProfile.id));
-        on('btn-profile-install', 'click', onInstallClick);
+        on('btn-dl-icon-192', 'click', () => downloadAppIconPng(192));
+        on('btn-dl-icon-512', 'click', () => downloadAppIconPng(512));
         on('form-edit-name', 'submit', (e) => {
           e.preventDefault();
           const n = $('input-edit-name').value.trim();
@@ -3070,12 +3170,12 @@
         });
 
         // Modals
-        on('btn-close-install', 'click', () => $('install-modal').classList.remove('open'));
-        on('btn-done-install', 'click', () => $('install-modal').classList.remove('open'));
+        on('btn-close-install', 'click', () => $('install-modal').classList.remove('active'));
+        on('btn-done-install', 'click', () => $('install-modal').classList.remove('active'));
         on('btn-os-android', 'click', () => setGuideOS('android'));
         on('btn-os-ios', 'click', () => setGuideOS('ios'));
-        on('btn-open-reset', 'click', () => $('reset-modal').classList.add('open'));
-        on('btn-cancel-reset', 'click', () => $('reset-modal').classList.remove('open'));
+        on('btn-open-reset', 'click', () => $('reset-modal').classList.add('active'));
+        on('btn-cancel-reset', 'click', () => $('reset-modal').classList.remove('active'));
         on('btn-confirm-reset', 'click', () => {
           try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
           window.location.reload();
@@ -3097,6 +3197,21 @@
           $('local-pip-fallback').classList.toggle('hidden', state.call.camOn);
         });
         on('btn-call-flip', 'click', flipCamera);
+        on('btn-call-chat', 'click', () => {
+          const drawer = $('incall-chat-drawer');
+          drawer.classList.toggle('active');
+          if (drawer.classList.contains('active') && state.call.remoteId) {
+            renderInCallMessages(state.call.remoteId);
+          }
+        });
+        on('btn-close-incall-chat', 'click', () => $('incall-chat-drawer').classList.remove('active'));
+        on('form-incall-send', 'submit', (e) => {
+          e.preventDefault();
+          if (state.call.remoteId) {
+            sendChatMessage(state.call.remoteId, $('input-incall-msg').value);
+            $('input-incall-msg').value = '';
+          }
+        });
       });
     })();
   </script>
