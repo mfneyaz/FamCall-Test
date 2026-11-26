@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,10 +7,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FamCall HUD" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#050914" />
+  <meta name="theme-color" content="#050a14" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23050914'/%3E%3Cstop offset='55%25' stop-color='%230a1e3d'/%3E%3Cstop offset='100%25' stop-color='%230284c7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='28' fill='url(%23g)'/%3E%3Crect x='4' y='4' width='112' height='112' rx='24' fill='none' stroke='%2338bdf8' stroke-opacity='0.5' stroke-width='2.5'/%3E%3Cpath d='M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z' fill='none' stroke='%23e0f2fe' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z' fill='%2338bdf8' fill-opacity='0.32' stroke='%2338bdf8' stroke-width='3.2'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23050a14'/%3E%3Cstop offset='55%25' stop-color='%230a1e3d'/%3E%3Cstop offset='100%25' stop-color='%230284c7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='28' fill='url(%23g)'/%3E%3Crect x='4' y='4' width='112' height='112' rx='24' fill='none' stroke='%2338bdf8' stroke-opacity='0.5' stroke-width='2.5'/%3E%3Cpath d='M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z' fill='none' stroke='%23e0f2fe' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z' fill='%2338bdf8' fill-opacity='0.32' stroke='%2338bdf8' stroke-width='3.2'/%3E%3C/svg%3E" />
   <title>FamCall HUD — Family Connect</title>
 
   <!-- PeerJS (deferred so UI renders immediately even offline) -->
@@ -31,14 +30,14 @@
     .screen-layer.active { display: flex; }
     .modal-backdrop { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(2,6,16,0.78); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
     .modal-backdrop.active { display: flex; }
-    .call-layer { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; background: radial-gradient(circle at 50% 25%, #0c1f3d 0%, #050914 70%); }
+    .call-layer { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; background: radial-gradient(circle at 50% 25%, #0c1f3d 0%, #050a14 70%); }
     .call-layer.active { display: flex; }
 
     /* =====================================================================
        2. DESIGN TOKENS & RESET
        ===================================================================== */
     :root {
-      --bg-obsidian: #050914;
+      --bg-obsidian: #050a14;
       --bg-deep: #070e1f;
       --surface-glass: rgba(15, 23, 42, 0.62);
       --surface-strong: rgba(8, 15, 30, 0.9);
@@ -101,7 +100,7 @@
       background:
         radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
         radial-gradient(circle at 82% 88%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
-        linear-gradient(165deg, #050914 0%, #091428 55%, #040812 100%);
+        linear-gradient(165deg, #050a14 0%, #091428 55%, #040812 100%);
     }
 
     .hud-grid {
@@ -330,7 +329,7 @@
       justify-content: space-between;
       gap: 8px;
       padding: 10px 14px;
-      background: rgba(5, 9, 20, 0.78);
+      background: rgba(5, 10, 20, 0.78);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(56, 189, 248, 0.16);
@@ -343,9 +342,7 @@
       min-width: 0;
     }
 
-    .header-title-wrap {
-      min-width: 0;
-    }
+    .header-title-wrap { min-width: 0; }
 
     .header-brand-row {
       display: flex;
@@ -396,9 +393,7 @@
       flex-direction: column;
       gap: 12px;
     }
-    .tab-pane.active {
-      display: flex;
-    }
+    .tab-pane.active { display: flex; }
 
     .app-nav {
       flex-shrink: 0;
@@ -635,7 +630,7 @@
       font-size: 10px;
       font-weight: 800;
       background: var(--cyan);
-      color: #050914;
+      color: #050a14;
       padding: 1px 7px;
       border-radius: 999px;
     }
@@ -684,7 +679,7 @@
       padding: max(16px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
       justify-content: space-between;
       overflow-y: auto;
-      background: linear-gradient(165deg, #050914 0%, #0a1428 55%, #040812 100%);
+      background: linear-gradient(165deg, #050a14 0%, #0a1428 55%, #040812 100%);
     }
 
     #lock-screen {
@@ -694,7 +689,7 @@
       gap: clamp(8px, 1.4dvh, 14px);
       background:
         radial-gradient(circle at 50% 22%, rgba(56, 189, 248, 0.16) 0%, transparent 48%),
-        linear-gradient(165deg, #050914 0%, #0a1428 55%, #040812 100%);
+        linear-gradient(165deg, #050a14 0%, #0a1428 55%, #040812 100%);
     }
 
     .lock-top-bar {
@@ -740,9 +735,7 @@
       text-align: center;
     }
 
-    #lock-id {
-      margin-top: clamp(4px, 0.8dvh, 8px);
-    }
+    #lock-id { margin-top: clamp(4px, 0.8dvh, 8px); }
 
     #pin-msg {
       margin: clamp(8px, 1.2dvh, 12px) 0 0;
@@ -956,7 +949,7 @@
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid rgba(56, 189, 248, 0.55);
-      background: rgba(5, 9, 20, 0.92);
+      background: rgba(5, 10, 20, 0.92);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1007,7 +1000,6 @@
       justify-content: center;
     }
 
-    /* In-call quick chat drawer */
     #incall-chat-drawer {
       position: absolute;
       left: 12px;
@@ -1103,7 +1095,7 @@
         <svg class="brand-icon-svg" viewBox="0 0 120 120" aria-hidden="true">
           <defs>
             <linearGradient id="fcHdrGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="0%" stop-color="#050a14"/>
               <stop offset="55%" stop-color="#0a1e3d"/>
               <stop offset="100%" stop-color="#0284c7"/>
             </linearGradient>
@@ -1116,9 +1108,9 @@
         <div class="header-title-wrap">
           <div class="header-brand-row">
             <h1 class="brand-name">FamCall HUD</h1>
-            <button type="button" id="btn-p2p-status" class="status-pill" title="P2P Status">
-              <span id="p2p-dot" class="status-dot"></span>
-              <span id="p2p-label">Connecting</span>
+            <button type="button" id="btn-p2p-status" class="status-pill" title="Tap to Reconnect">
+              <span id="p2p-dot" class="status-dot connecting"></span>
+              <span id="p2p-label">Connecting...</span>
             </button>
           </div>
           <p id="header-id" class="header-sub">FAM-0000</p>
@@ -1284,7 +1276,7 @@
         <svg class="brand-icon-lg" viewBox="0 0 120 120" aria-hidden="true">
           <defs>
             <linearGradient id="fcSetupGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="0%" stop-color="#050a14"/>
               <stop offset="55%" stop-color="#0a1e3d"/>
               <stop offset="100%" stop-color="#0284c7"/>
             </linearGradient>
@@ -1308,7 +1300,7 @@
         <p style="margin:6px 0 0;font-size:12px;color:var(--text-secondary);">Private 1-on-1 Family Calling &amp; Chat</p>
       </div>
 
-      <form id="form-setup" class="glass-strong panel-card">
+      <form id="form-setup" class="glass-strong panel-card" novalidate>
         <div style="display:flex;justify-content:center;">
           <button type="button" id="btn-setup-photo" class="avatar-btn" title="Upload Photo">
             <div id="setup-avatar" class="avatar-circle" style="width:72px;height:72px;font-size:22px;">FC</div>
@@ -1320,7 +1312,7 @@
 
         <div>
           <label for="setup-name" class="section-title" style="display:block;margin-bottom:6px;">Display Name</label>
-          <input id="setup-name" type="text" required maxlength="24" placeholder="Your Name" class="hud-input" />
+          <input id="setup-name" type="text" maxlength="24" placeholder="Your Name" class="hud-input" />
         </div>
 
         <div>
@@ -1328,16 +1320,16 @@
             <label for="setup-id" class="section-title">Your Family ID</label>
             <button type="button" id="btn-gen-id" style="font-size:11px;font-weight:700;color:#38bdf8;text-decoration:underline;">Auto-Generate</button>
           </div>
-          <input id="setup-id" type="text" required maxlength="16" placeholder="FAM-1234" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
-          <div id="setup-id-warning" class="setup-warning hidden">This Family ID is already active on another browser. Choose a different ID or close the other session.</div>
+          <input id="setup-id" type="text" maxlength="16" placeholder="FAM-1234" class="hud-input mono" style="text-transform:uppercase;color:#7dd3fc;" />
+          <div id="setup-id-warning" class="setup-warning hidden"></div>
         </div>
 
         <div>
           <label for="setup-pin" class="section-title" style="display:block;margin-bottom:6px;">4-Digit Personal PIN</label>
-          <input id="setup-pin" type="password" inputmode="numeric" maxlength="4" required placeholder="••••" class="hud-input mono" style="text-align:center;letter-spacing:0.5em;" />
+          <input id="setup-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" class="hud-input mono" style="text-align:center;letter-spacing:0.5em;" />
         </div>
 
-        <button type="submit" id="btn-setup-submit" class="btn btn-cyan" style="padding:12px;width:100%;font-size:13px;">Create Profile &amp; Enter</button>
+        <button type="button" id="btn-setup-submit" class="btn btn-cyan" style="padding:12px;width:100%;font-size:13px;">Create Profile &amp; Enter</button>
       </form>
     </div>
 
@@ -1351,7 +1343,7 @@
         <svg class="brand-icon-lg" viewBox="0 0 120 120" aria-hidden="true">
           <defs>
             <linearGradient id="fcLockGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#050914"/>
+              <stop offset="0%" stop-color="#050a14"/>
               <stop offset="55%" stop-color="#0a1e3d"/>
               <stop offset="100%" stop-color="#0284c7"/>
             </linearGradient>
@@ -1690,7 +1682,7 @@
         return m + ':' + s;
       }
 
-      /* Pure-JS 32-bit hash (works on https, http, file://, content://) */
+      /* Pure-JS 32-bit FNV-1a hash (works on https, http, file://, content://) */
       function hashPin(pin) {
         const s = 'famcall-hud-v7::' + String(pin || '');
         let h = 2166136261 >>> 0;
@@ -1715,7 +1707,7 @@
           const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 120 120">
             <defs>
               <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#050914"/>
+                <stop offset="0%" stop-color="#050a14"/>
                 <stop offset="55%" stop-color="#0a1e3d"/>
                 <stop offset="100%" stop-color="#0284c7"/>
               </linearGradient>
@@ -1934,7 +1926,40 @@
         });
       }
 
-      /* ---------- 6. STRICT SINGLE-SCREEN VISIBILITY & AUTO-LOCK ---------- */
+      /* ---------- 6. STRICT SINGLE-SCREEN VISIBILITY, PIN & AUTO-LOCK ---------- */
+      function updatePinDots() {
+        const dots = document.querySelectorAll('#pin-dots .pin-dot');
+        dots.forEach((d, idx) => {
+          d.classList.toggle('filled', idx < state.enteredPin.length);
+        });
+      }
+
+      function pushPinDigit(digit) {
+        if (!state.isLocked || !state.myProfile) return;
+        if (state.enteredPin.length >= 4) return;
+        state.enteredPin += String(digit);
+        updatePinDots();
+        if (state.enteredPin.length === 4) {
+          if (hashPin(state.enteredPin) === state.myProfile.pinHash) {
+            unlockAndEnterApp();
+          } else {
+            const dotsWrap = $('pin-dots');
+            $('pin-msg').textContent = 'Incorrect PIN — try again';
+            $('pin-msg').style.color = '#f87171';
+            if (dotsWrap) {
+              dotsWrap.classList.remove('shake');
+              void dotsWrap.offsetWidth;
+              dotsWrap.classList.add('shake');
+            }
+            setTimeout(() => {
+              state.enteredPin = '';
+              updatePinDots();
+              $('pin-msg').style.color = '';
+            }, 380);
+          }
+        }
+      }
+
       function resetIdle() {
         clearTimeout(state.idleTimer);
         if (!state.myProfile || state.isLocked || state.call.status !== 'IDLE') return;
@@ -1947,6 +1972,7 @@
 
       function showSetupScreen() {
         $('setup-id').value = genId();
+        $('setup-id-warning').classList.add('hidden');
         $('lock-screen').classList.remove('active');
         $('chat-screen').classList.remove('active');
         $('setup-screen').classList.add('active');
@@ -1961,6 +1987,7 @@
         $('lock-name').textContent = state.myProfile.name;
         $('lock-id').textContent = state.myProfile.id;
         $('pin-msg').textContent = reason || 'Enter your 4-digit personal PIN';
+        $('pin-msg').style.color = '';
         $('setup-screen').classList.remove('active');
         $('chat-screen').classList.remove('active');
         $('lock-screen').classList.add('active');
@@ -1981,6 +2008,18 @@
         setP2PStatus('connecting', 'Connecting...');
         initPeer(true);
       }
+
+      function checkUrlInvite() {
+        try {
+          const addId = cleanId(new URLSearchParams(window.location.search).get('add'));
+          if (addId && state.myProfile && addId !== state.myProfile.id) {
+            $('input-friend-id').value = addId;
+            switchTab('requests');
+            toast('Invite pre-filled for ' + addId, 'info');
+          }
+        } catch (e) {}
+      }
+
       /* ---------- 7. PEERJS P2P PACKET QUEUE, AUTO-RECONNECT & DUPLICATE BLOCKER ---------- */
       function setP2PStatus(status, label) {
         state.peerStatus = status;
@@ -2025,39 +2064,6 @@
         $('dup-switch-box').classList.add('hidden');
         $('dup-new-id').value = genId();
         $('dup-modal').classList.add('active');
-      }
-
-      /* Live PeerJS availability check during Create Profile */
-      function checkPeerIdAvailable(fid) {
-        return new Promise((resolve) => {
-          if (typeof window.Peer === 'undefined') {
-            resolve({ available: true });
-            return;
-          }
-          let settled = false;
-          let probe = null;
-          const finish = (res) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            if (probe) { try { probe.destroy(); } catch (e) {} }
-            resolve(res);
-          };
-          const timer = setTimeout(() => finish({ available: true }), 4500);
-          try {
-            probe = new window.Peer(toPeerId(fid), { debug: 0 });
-            probe.on('open', () => finish({ available: true }));
-            probe.on('error', (err) => {
-              if (err && err.type === 'unavailable-id') {
-                finish({ available: false, reason: 'taken' });
-              } else {
-                finish({ available: true });
-              }
-            });
-          } catch (e) {
-            finish({ available: true });
-          }
-        });
       }
 
       function initPeer(force) {
@@ -2135,69 +2141,6 @@
         } catch (e) {
           setP2PStatus('offline', 'Offline');
           scheduleReconnect();
-        }
-      }
-
-      function checkUrlInvite() {
-        try {
-          const addId = cleanId(new URLSearchParams(window.location.search).get('add'));
-          if (addId && state.myProfile && addId !== state.myProfile.id) {
-            $('input-friend-id').value = addId;
-            switchTab('requests');
-            toast('Invite pre-filled for ' + addId, 'info');
-          }
-        } catch (e) {}
-      }
-
-      /* ---------- 7. PEERJS P2P PACKET QUEUE & FRIEND SYNC ---------- */
-      function setP2PStatus(status, label) {
-        state.peerStatus = status;
-        const dot = $('p2p-dot');
-        const lbl = $('p2p-label');
-        if (!dot || !lbl) return;
-        dot.className = 'status-dot' + (status === 'online' ? ' online' : status === 'offline' ? ' offline' : '');
-        lbl.textContent = label || status;
-      }
-
-      function initPeer() {
-        try {
-          if (!state.myProfile) return;
-          if (typeof window.Peer === 'undefined') { setP2PStatus('offline', 'Offline'); return; }
-          if (state.peer && !state.peer.destroyed) {
-            if (state.peer.open) { setP2PStatus('online', 'Online'); return; }
-            try { state.peer.destroy(); } catch (e) {}
-          }
-          setP2PStatus('connecting', 'Connecting');
-          const peer = new window.Peer(toPeerId(state.myProfile.id), {
-            debug: 0,
-            config: {
-              iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-              ]
-            }
-          });
-          state.peer = peer;
-
-          peer.on('open', () => {
-            setP2PStatus('online', 'Online');
-            syncAllPeers();
-          });
-          peer.on('connection', bindDataConn);
-          peer.on('call', onIncomingMediaCall);
-          peer.on('disconnected', () => setP2PStatus('offline', 'Offline'));
-          peer.on('error', (err) => {
-            if (err && err.type === 'peer-unavailable') {
-              toast('User is currently offline', 'error');
-            } else {
-              setP2PStatus('offline', 'Offline');
-            }
-          });
-
-          clearInterval(state.pingTimer);
-          state.pingTimer = setInterval(syncAllPeers, 25000);
-        } catch (e) {
-          setP2PStatus('offline', 'Offline');
         }
       }
 
@@ -3119,7 +3062,50 @@
         state.deferredPrompt = e;
       });
 
-      /* ---------- 12. BOOTSTRAP & EVENT WIRING ---------- */
+      /* ---------- 12. INSTANT PROFILE CREATION HANDLER (NON-BLOCKING) ---------- */
+      function handleSetupSubmit() {
+        const warn = $('setup-id-warning');
+        if (warn) {
+          warn.classList.add('hidden');
+          warn.textContent = '';
+        }
+
+        const name = ($('setup-name').value || '').trim();
+        const id = cleanId($('setup-id').value);
+        const pin = ($('setup-pin').value || '').trim();
+
+        if (!name) {
+          toast('Please enter your Display Name', 'error');
+          $('setup-name').focus();
+          return;
+        }
+        if (id.length < 4 || id.length > 16) {
+          if (warn) {
+            warn.textContent = 'Family ID must be 4–16 characters (letters, numbers, or hyphen).';
+            warn.classList.remove('hidden');
+          }
+          toast('Enter a valid Family ID (4–16 chars)', 'error');
+          $('setup-id').focus();
+          return;
+        }
+        if (!/^\d{4}$/.test(pin)) {
+          toast('Personal PIN must be exactly 4 digits', 'error');
+          $('setup-pin').focus();
+          return;
+        }
+
+        $('setup-id').value = id;
+        state.myProfile = {
+          id,
+          name,
+          pinHash: hashPin(pin),
+          avatar: state.setupTempAvatar || null
+        };
+        saveData();
+        unlockAndEnterApp();
+      }
+
+      /* ---------- 13. BOOTSTRAP & EVENT WIRING ---------- */
       document.addEventListener('DOMContentLoaded', () => {
         initPWA();
         loadData();
@@ -3163,41 +3149,19 @@
           } catch (err) { toast('Could not load image', 'error'); }
         });
 
-        // Setup
+        // Setup Screen (instant, non-blocking)
         on('btn-setup-photo', 'click', () => pickPhoto('setup'));
         on('btn-gen-id', 'click', () => {
-          $('setup-id').value = genId();
+          const inp = $('setup-id');
+          inp.value = genId();
           $('setup-id-warning').classList.add('hidden');
+          inp.focus();
         });
         on('setup-id', 'input', () => $('setup-id-warning').classList.add('hidden'));
-        on('form-setup', 'submit', async (e) => {
+        on('btn-setup-submit', 'click', handleSetupSubmit);
+        on('form-setup', 'submit', (e) => {
           e.preventDefault();
-          const name = $('setup-name').value.trim();
-          const id = cleanId($('setup-id').value);
-          const pin = $('setup-pin').value.trim();
-          if (!name || !id || !/^\d{4}$/.test(pin)) {
-            toast('Enter Name, Family ID & 4-digit PIN', 'error');
-            return;
-          }
-          const btn = $('btn-setup-submit');
-          const warn = $('setup-id-warning');
-          warn.classList.add('hidden');
-          btn.disabled = true;
-          btn.textContent = 'Checking ID availability...';
-
-          const check = await checkPeerIdAvailable(id);
-          btn.disabled = false;
-          btn.textContent = 'Create Profile & Enter';
-
-          if (!check.available) {
-            warn.classList.remove('hidden');
-            toast('Family ID already active on another browser', 'error');
-            return;
-          }
-
-          state.myProfile = { id, name, pinHash: hashPin(pin), avatar: state.setupTempAvatar || null };
-          saveData();
-          unlockAndEnterApp();
+          handleSetupSubmit();
         });
 
         // Lock Screen
@@ -3223,6 +3187,29 @@
         on('btn-header-install', 'click', onInstallClick);
         on('btn-header-lock', 'click', () => showLockScreen('Locked manually'));
         document.querySelectorAll('.nav-btn').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+        // Chats Search & Contact Card Actions
+        on('search-input', 'input', (e) => {
+          state.search = e.target.value || '';
+          renderContacts();
+        });
+        on('contacts-list', 'click', (e) => {
+          const card = e.target.closest('.contact-card');
+          if (!card) return;
+          const fid = card.dataset.fid;
+          const contact = state.contacts[fid];
+          if (!contact) return;
+          const actBtn = e.target.closest('[data-act]');
+          if (actBtn) {
+            const act = actBtn.dataset.act;
+            if (act === 'audio') startOutgoingCall(fid, 'audio');
+            else if (act === 'video') startOutgoingCall(fid, 'video');
+            else if (act === 'edit') openContactModal(fid);
+            else openChat(contact);
+            return;
+          }
+          openChat(contact);
+        });
 
         // Auto-Reconnect on Network & Visibility Recovery + Clean Teardown on Close
         window.addEventListener('online', () => {
@@ -3255,13 +3242,14 @@
           $('dup-switch-box').classList.toggle('hidden');
           $('dup-new-id').focus();
         });
-        on('btn-dup-gen', 'click', () => { $('dup-new-id').value = genId(); });
-        on('btn-dup-apply-id', 'click', async () => {
+        on('btn-dup-gen', 'click', () => {
+          $('dup-new-id').value = genId();
+          $('dup-new-id').focus();
+        });
+        on('btn-dup-apply-id', 'click', () => {
           const newId = cleanId($('dup-new-id').value);
-          if (!newId || !state.myProfile) { toast('Enter a valid Family ID', 'error'); return; }
-          const check = await checkPeerIdAvailable(newId);
-          if (!check.available) {
-            toast('That ID is also active on another browser', 'error');
+          if (newId.length < 4 || newId.length > 16 || !state.myProfile) {
+            toast('Enter a valid Family ID (4–16 chars)', 'error');
             return;
           }
           state.myProfile.id = newId;
@@ -3430,6 +3418,7 @@
         on('btn-open-reset', 'click', () => $('reset-modal').classList.add('active'));
         on('btn-cancel-reset', 'click', () => $('reset-modal').classList.remove('active'));
         on('btn-confirm-reset', 'click', () => {
+          destroyPeerCleanly();
           try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
           window.location.reload();
         });
