@@ -1341,6 +1341,60 @@
       }
       return (h >>> 0).toString(16);
     }
+    async function sha256Hex(str) {
+      if (!hasWebCrypto) return '';
+      const buf = await crypto.subtle.digest('SHA-256', textEnc.encode(str));
+      return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    function simpleHash32(str, unsigned = false, radix = 16) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h) + str.charCodeAt(i);
+        h |= 0;
+      }
+      return (unsigned ? (h >>> 0) : h).toString(radix);
+    }
+    function fnv1aHex(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0).toString(16);
+    }
+    async function verifyPin(pin, prof) {
+      if (!prof) return { ok: false, migrated: false };
+      const p = String(pin);
+      const stored = String(prof.pinHash || '');
+      if (stored && stored === hashPin(p)) return { ok: true, migrated: false };
+      if (prof.pin && String(prof.pin) === p) return { ok: true, migrated: true };
+
+      const candidates = new Set([p]);
+      const salts = [
+        '', 'famcall:', 'famcall-hud:', 'famcall_v1:', 'famcall-v1:',
+        'famcall-v2:', 'famcall-v3:', 'famcall-salt:', 'famcall_pin:', (prof.id || '') + ':'
+      ];
+      salts.forEach((salt) => {
+        const s = salt + p;
+        candidates.add(fnv1aHex(s));
+        candidates.add(simpleHash32(s, false, 16));
+        candidates.add(simpleHash32(s, true, 16));
+        candidates.add(simpleHash32(s, false, 36));
+        candidates.add(simpleHash32(s, true, 36));
+        candidates.add(simpleHash32(s, false, 10));
+        try { candidates.add(btoa(s)); } catch (e) {}
+      });
+      if (stored && candidates.has(stored)) return { ok: true, migrated: true };
+
+      if (stored.length === 64 && hasWebCrypto) {
+        const shaSalts = ['', 'famcall:', 'famcall-hud:', 'famcall-salt::', 'famcall_pin:', (prof.id || '') + ':'];
+        for (const salt of shaSalts) {
+          if (await sha256Hex(salt + p) === stored) return { ok: true, migrated: true };
+          if (await sha256Hex(p + ':' + (prof.id || '')) === stored) return { ok: true, migrated: true };
+        }
+      }
+      return { ok: false, migrated: false };
+    }
     function makePairId(a, b) {
       return [cleanId(a), cleanId(b)].sort().join('__');
     }
@@ -2786,12 +2840,18 @@
       updatePinDots();
       if (state.enteredPin.length === 4) {
         const pin = state.enteredPin;
-        if (hashPin(pin) === state.myProfile.pinHash) {
+        const check = await verifyPin(pin, state.myProfile);
+        if (check.ok) {
           state.sessionPlainPin = pin;
           if (db && state.fbUser) {
             const snap = await getDoc(pubDoc('profiles', state.myProfile.id)).catch(() => null);
             if (snap && snap.exists()) state.myProfile = { ...state.myProfile, ...snap.data() };
+            if (check.migrated) {
+              state.myProfile.pinHash = hashPin(pin);
+              await updateDoc(pubDoc('profiles', state.myProfile.id), { pinHash: state.myProfile.pinHash }).catch(() => {});
+            }
           }
+          saveRememberedProfile(state.myProfile);
           await ensureUserE2EEKeys(state.myProfile, pin);
           unlockAndEnterApp();
         } else {
@@ -2906,7 +2966,12 @@
           const snap = await getDoc(pubDoc('profiles', id));
           if (!snap.exists()) { toast('Family ID not found — create a profile first', 'error'); return; }
           const prof = snap.data();
-          if (prof.pinHash !== hashPin(pin)) { toast('Incorrect 4-digit PIN', 'error'); return; }
+          const check = await verifyPin(pin, prof);
+          if (!check.ok) { toast('Incorrect 4-digit PIN', 'error'); return; }
+          if (check.migrated) {
+            prof.pinHash = hashPin(pin);
+            await updateDoc(pubDoc('profiles', id), { pinHash: prof.pinHash }).catch(() => {});
+          }
           state.myProfile = { ...prof };
           state.sessionPlainPin = pin;
           saveRememberedProfile(state.myProfile);
