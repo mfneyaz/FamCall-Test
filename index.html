@@ -770,14 +770,46 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
-      padding: 10px 6px;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, 0.78);
+      gap: 7px;
+      padding: 11px 6px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.82);
       border: 1px solid rgba(148, 163, 184, 0.18);
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #e2e8f0;
+      transition: transform 0.12s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+    }
+    .attach-opt:active { transform: scale(0.95); }
+    .attach-opt:hover {
+      border-color: var(--border-cyan);
+      background: rgba(14, 42, 74, 0.88);
+      color: #7dd3fc;
+    }
+    .attach-icon-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    .attach-icon-badge.photo {
+      background: linear-gradient(145deg, rgba(14, 116, 144, 0.42), rgba(7, 36, 66, 0.9));
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.48);
+    }
+    .attach-icon-badge.video {
+      background: linear-gradient(145deg, rgba(6, 95, 70, 0.45), rgba(5, 42, 34, 0.9));
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.48);
+    }
+    .attach-icon-badge.doc {
+      background: linear-gradient(145deg, rgba(180, 83, 9, 0.4), rgba(56, 28, 7, 0.9));
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.48);
     }
     .attach-opt:hover { border-color: var(--border-cyan); color: #7dd3fc; }
 
@@ -925,7 +957,10 @@
           <div id="setup-avatar-preview" class="avatar" style="width:54px;height:54px;font-size:18px;cursor:pointer;" title="Tap to pick photo">FC</div>
           <div style="flex:1;">
             <div style="font-size:12px;font-weight:700;color:#e2e8f0;">Profile Photo (Optional)</div>
-            <button id="btn-setup-photo" type="button" class="btn btn-ghost" style="padding:6px 12px;font-size:11px;margin-top:4px;">Choose Photo</button>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              <button id="btn-setup-photo" type="button" class="btn btn-ghost" style="padding:6px 12px;font-size:11px;">Choose Photo</button>
+              <button id="btn-setup-photo-remove" type="button" class="btn btn-danger hidden" style="padding:6px 10px;font-size:11px;">Remove</button>
+            </div>
           </div>
         </div>
         <div>
@@ -1076,34 +1111,9 @@
             <div id="profile-id" class="mono" style="font-size:12px;color:#38bdf8;margin-top:2px;">FAM-0000</div>
             <div style="font-size:11px;color:#34d399;margin-top:3px;">🔒 AES-256 End-to-End Encrypted</div>
           </div>
-          <button id="btn-change-my-photo" type="button" class="btn btn-ghost" style="padding:7px 11px;font-size:11px;">Photo</button>
-        </div>
-
-        <form id="form-edit-name" class="glass" style="border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;">
-          <label style="font-size:11px;font-weight:700;color:#94a3b8;">DISPLAY NAME</label>
-          <div style="display:flex;gap:8px;">
-            <input id="input-edit-name" type="text" class="field" placeholder="Your name" required />
-            <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Save</button>
-          </div>
-        </form>
-
-        <form id="form-edit-pin" class="glass" style="border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;">
-          <label style="font-size:11px;font-weight:700;color:#94a3b8;">CHANGE 4-DIGIT PIN</label>
-          <div style="display:flex;gap:8px;">
-            <input id="input-edit-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="New 4-digit PIN" required />
-            <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Update</button>
-          </div>
-        </form>
-
-        <!-- Ringtone Card -->
-        <div class="glass" style="border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div>
-            <div style="font-size:13px;font-weight:700;">Loud Melodic Ringtone</div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Full-volume audio + vibration on calls</div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button id="btn-test-ring" type="button" class="btn btn-cyan" style="padding:7px 12px;font-size:11.5px;">Test</button>
-            <button id="btn-toggle-ring" type="button" class="btn btn-ghost" style="padding:7px 12px;font-size:11.5px;">ON</button>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <button id="btn-change-my-photo" type="button" class="btn btn-ghost" style="padding:6px 11px;font-size:11px;">Photo</button>
+            <button id="btn-remove-my-photo" type="button" class="btn btn-danger hidden" style="padding:6px 11px;font-size:11px;">Remove</button>
           </div>
         </div>
 
@@ -1209,15 +1219,21 @@
       <!-- Attachment Tray -->
       <div id="attach-tray" class="glass-strong attach-tray hidden">
         <button id="btn-attach-photo" type="button" class="attach-opt">
-          <span style="font-size:20px;">🖼️</span>
+          <span class="attach-icon-badge photo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </span>
           <span>Photo</span>
         </button>
         <button id="btn-attach-video" type="button" class="attach-opt">
-          <span style="font-size:20px;">🎬</span>
+          <span class="attach-icon-badge video">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="M16 10l6-3v10l-6-3z"/></svg>
+          </span>
           <span>Video Clip</span>
         </button>
         <button id="btn-attach-doc" type="button" class="attach-opt">
-          <span style="font-size:20px;">📄</span>
+          <span class="attach-icon-badge doc">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          </span>
           <span>Document</span>
         </button>
       </div>
@@ -1289,7 +1305,10 @@
       <div style="font-size:16px;font-weight:800;">Edit Family Contact</div>
       <div style="display:flex;align-items:center;gap:12px;">
         <div id="edit-contact-avatar" class="avatar" style="width:52px;height:52px;">FC</div>
-        <button id="btn-edit-contact-photo" type="button" class="btn btn-ghost" style="padding:7px 12px;font-size:12px;">Change Photo</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="btn-edit-contact-photo" type="button" class="btn btn-ghost" style="padding:7px 12px;font-size:12px;">Change Photo</button>
+          <button id="btn-edit-contact-photo-remove" type="button" class="btn btn-danger" style="padding:7px 10px;font-size:12px;">Remove</button>
+        </div>
       </div>
       <input id="input-contact-nickname" type="text" class="field" placeholder="Custom nickname" />
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -1491,26 +1510,30 @@
     /* ---------- 2. SPATIAL GLASS SVG ICON & PWA MANIFEST ---------- */
     const APP_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#0a2342"/>
+        <linearGradient id="fcBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0d2b4e"/>
           <stop offset="100%" stop-color="#040814"/>
         </linearGradient>
-        <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#7dd3fc"/>
+        <linearGradient id="fcHandset" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#e0f2fe"/>
+          <stop offset="55%" stop-color="#38bdf8"/>
           <stop offset="100%" stop-color="#0284c7"/>
         </linearGradient>
       </defs>
-      <rect width="512" height="512" rx="118" fill="url(#bg)" stroke="#38bdf8" stroke-width="14"/>
-      <circle cx="256" cy="256" r="158" fill="none" stroke="#38bdf8" stroke-opacity="0.24" stroke-width="10"/>
-      <path d="M352 308c-22-18-48-28-64-12l-18 18c-36-18-68-50-86-86l18-18c16-16 6-42-12-64-18-20-40-26-58-10l-14 14c-16 16-22 44-12 78 24 80 100 156 180 180 34 10 62 4 78-12l14-14c16-18 10-40-10-58z" fill="url(#glow)"/>
-      <circle cx="336" cy="172" r="24" fill="#10b981"/>
+      <rect x="14" y="14" width="484" height="484" rx="116" fill="url(#fcBg)" stroke="#38bdf8" stroke-width="16"/>
+      <circle cx="256" cy="256" r="168" fill="none" stroke="#38bdf8" stroke-opacity="0.22" stroke-width="10"/>
+      <path d="M294 156c28 12 50 34 62 62" fill="none" stroke="#7dd3fc" stroke-opacity="0.72" stroke-width="16" stroke-linecap="round"/>
+      <path d="M294 106c56 16 96 56 112 112" fill="none" stroke="#38bdf8" stroke-opacity="0.38" stroke-width="14" stroke-linecap="round"/>
+      <path d="M366 322l-46-32c-12-8-28-6-38 4l-18 18c-34-18-62-46-80-80l18-18c10-10 12-26 4-38l-32-46c-10-14-30-16-42-4l-20 20c-18 18-24 46-14 78 24 82 96 154 178 178 32 10 60 4 78-14l20-20c12-12 10-32-8-46z" fill="url(#fcHandset)"/>
+      <circle cx="380" cy="132" r="24" fill="#10b981" stroke="#040814" stroke-width="8"/>
     </svg>`;
 
     function initBrandAndPWA() {
       const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(APP_ICON_SVG);
+      const imgHtml = `<img src="${svgUrl}" alt="FamCall HUD" style="width:100%;height:100%;display:block;border-radius:10px;" />`;
       if ($('dynamic-favicon')) $('dynamic-favicon').href = svgUrl;
-      if ($('auth-brand-icon')) $('auth-brand-icon').innerHTML = APP_ICON_SVG;
-      if ($('header-brand-icon')) $('header-brand-icon').innerHTML = APP_ICON_SVG;
+      if ($('auth-brand-icon')) $('auth-brand-icon').innerHTML = imgHtml;
+      if ($('header-brand-icon')) $('header-brand-icon').innerHTML = imgHtml;
       try {
         const manifest = {
           name: 'FamCall HUD — Family Connect',
@@ -2275,6 +2298,7 @@
       if ($('input-edit-name') && document.activeElement !== $('input-edit-name')) $('input-edit-name').value = p.name;
       setAvatar($('header-avatar-btn'), p.avatar, p.name);
       setAvatar($('profile-avatar'), p.avatar, p.name);
+      if ($('btn-remove-my-photo')) $('btn-remove-my-photo').classList.toggle('hidden', !p.avatar);
       if ($('btn-toggle-ring')) $('btn-toggle-ring').textContent = state.ringtoneEnabled ? 'ON' : 'OFF';
       if ($('turn-url')) $('turn-url').value = state.customTurn.url || '';
       if ($('turn-user')) $('turn-user').value = state.customTurn.username || '';
@@ -3207,9 +3231,26 @@
       const openPhotoPicker = (mode) => { state.photoPickerMode = mode; $('photo-picker').value = ''; $('photo-picker').click(); };
       on('btn-setup-photo', 'click', () => openPhotoPicker('setup'));
       on('setup-avatar-preview', 'click', () => openPhotoPicker('setup'));
+      on('btn-setup-photo-remove', 'click', () => {
+        state.setupPhotoData = '';
+        setAvatar($('setup-avatar-preview'), '', $('setup-name').value || 'FC');
+        $('btn-setup-photo-remove').classList.add('hidden');
+      });
       on('btn-change-my-photo', 'click', () => openPhotoPicker('profile'));
       on('profile-avatar', 'click', () => openPhotoPicker('profile'));
+      on('btn-remove-my-photo', 'click', async () => {
+        if (!state.myProfile || !(await waitForFirebase())) return;
+        state.myProfile.avatar = '';
+        saveRememberedProfile(state.myProfile);
+        await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: '' }).catch(() => {});
+        renderProfile();
+        toast('Profile photo removed', 'info');
+      });
       on('btn-edit-contact-photo', 'click', () => openPhotoPicker('contact'));
+      on('btn-edit-contact-photo-remove', 'click', () => {
+        state.editContactPhotoData = '';
+        setAvatar($('edit-contact-avatar'), '', $('input-contact-nickname').value || 'FC');
+      });
 
       on('photo-picker', 'change', async (e) => {
         const file = e.target.files?.[0];
@@ -3218,6 +3259,7 @@
         if (state.photoPickerMode === 'setup') {
           state.setupPhotoData = dataUrl;
           setAvatar($('setup-avatar-preview'), dataUrl, $('setup-name').value);
+          $('btn-setup-photo-remove').classList.remove('hidden');
         } else if (state.photoPickerMode === 'profile' && state.myProfile && db) {
           state.myProfile.avatar = dataUrl;
           saveRememberedProfile(state.myProfile);
