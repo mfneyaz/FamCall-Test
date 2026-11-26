@@ -127,11 +127,12 @@
     .btn:active { transform: scale(0.96); }
 
     .btn-cyan {
-      background: linear-gradient(135deg, #0ea5e9, var(--cyan-deep));
-      border: 1px solid rgba(125, 211, 252, 0.5);
-      color: #fff;
-      box-shadow: 0 0 16px rgba(14, 165, 233, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      background: linear-gradient(135deg, rgba(12, 74, 110, 0.88), rgba(7, 36, 68, 0.94));
+      border: 1px solid rgba(56, 189, 248, 0.62);
+      color: #e0f2fe;
+      box-shadow: 0 0 18px rgba(14, 165, 233, 0.24), inset 0 1px 0 rgba(125, 211, 252, 0.28);
     }
+    .btn-cyan:hover { border-color: rgba(125, 211, 252, 0.9); color: #ffffff; }
 
     .btn-emerald {
       background: linear-gradient(135deg, var(--emerald), var(--emerald-deep));
@@ -547,6 +548,59 @@
     .msg-bubble.them { background: rgba(15, 23, 42, 0.88); border: 1px solid var(--border-subtle); border-bottom-left-radius: 4px; color: #e2e8f0; }
     .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 5px; font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); }
 
+    .chat-menu-dropdown {
+      position: absolute;
+      top: calc(max(10px, env(safe-area-inset-top)) + 48px);
+      right: 12px;
+      width: 190px;
+      border-radius: 16px;
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 30;
+    }
+    .chat-menu-dropdown.open { display: flex; }
+
+    .chat-select-bar {
+      flex-shrink: 0;
+      z-index: 12;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(14, 165, 233, 0.14);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .chat-select-bar.open { display: flex; }
+
+    .msg-row.selectable { align-items: center; gap: 8px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+    .msg-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.8px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 800;
+      color: #050a14;
+      transition: all 0.14s ease;
+    }
+    .msg-row.selected .msg-check {
+      background: var(--cyan);
+      border-color: #bae6fd;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+    }
+    .msg-row.selected .msg-bubble {
+      border-color: rgba(239, 68, 68, 0.78);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+    }
+
     .media-photo-thumb {
       display: block;
       max-width: 220px;
@@ -554,6 +608,16 @@
       border-radius: 12px;
       object-fit: cover;
       cursor: pointer;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .media-video-player {
+      display: block;
+      width: 100%;
+      max-width: 240px;
+      max-height: 240px;
+      border-radius: 12px;
+      background: #020617;
       border: 1px solid rgba(56, 189, 248, 0.35);
     }
 
@@ -633,6 +697,7 @@
     .shake { animation: shakeX 0.35s ease; }
 
     .credit { text-align: center; font-size: 11px; color: var(--text-muted); margin: 4px 0 0; }
+    .credit-author { color: #fbbf24; font-weight: 700; text-shadow: 0 0 10px rgba(251, 191, 36, 0.32); }
 
     /* =====================================================================
        10. FINAL UTILITY OVERRIDE
@@ -644,7 +709,8 @@
   <!-- Hidden File Pickers -->
   <input type="file" id="photo-picker" accept="image/*" class="hidden" />
   <input type="file" id="media-photo-picker" accept="image/*" class="hidden" />
-  <input type="file" id="media-doc-picker" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.mp4,.mov,.mp3,*" class="hidden" />
+  <input type="file" id="media-video-picker" accept="video/*" class="hidden" />
+  <input type="file" id="media-doc-picker" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.mp3,*" class="hidden" />
 
   <!-- Spatial Glass Ambient Background -->
   <div class="hud-bg"></div>
@@ -813,14 +879,17 @@
           <div class="row-between">
             <div>
               <div style="font-size:13px;font-weight:700;color:#fff;">Call Ringtone Sound</div>
-              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Synthesized chime for incoming calls</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Loud melodic chime for incoming calls</div>
             </div>
-            <button type="button" id="btn-toggle-ring" class="btn btn-cyan" style="padding:6px 12px;">ON</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" id="btn-test-ring" class="btn btn-ghost" style="padding:6px 10px;color:#38bdf8;">Test</button>
+              <button type="button" id="btn-toggle-ring" class="btn btn-cyan" style="padding:6px 12px;">ON</button>
+            </div>
           </div>
           <button type="button" id="btn-open-reset" class="btn btn-rose" style="padding:10px;width:100%;">Delete My Family Profile</button>
         </div>
 
-        <p class="credit">Designed by: Mohammad Firoz Alam</p>
+        <p class="credit">Designed by: <span class="credit-author">Mohammad Firoz Alam</span></p>
       </section>
     </main>
 
@@ -921,7 +990,7 @@
         <button type="button" id="btn-setup-submit" class="btn btn-cyan" style="padding:12px;width:100%;font-size:13px;">Create Profile &amp; Enter</button>
       </form>
 
-      <p class="credit">Designed by: Mohammad Firoz Alam</p>
+      <p class="credit">Designed by: <span class="credit-author">Mohammad Firoz Alam</span></p>
     </div>
   </section>
 
@@ -977,7 +1046,7 @@
         <button type="button" id="btn-lock-switch" style="font-size:12px;font-weight:700;color:#38bdf8;text-decoration:underline;padding:4px 6px;">Switch Account / Sign Out</button>
         <button type="button" id="btn-forgot-pin" style="font-size:12px;font-weight:600;color:var(--text-secondary);text-decoration:underline;padding:4px 6px;">Forgot PIN? Reset Account</button>
       </div>
-      <p class="credit">Designed by: Mohammad Firoz Alam</p>
+      <p class="credit">Designed by: <span class="credit-author">Mohammad Firoz Alam</span></p>
     </div>
   </section>
 
@@ -1004,8 +1073,33 @@
         <button type="button" id="btn-chat-video" class="btn btn-cyan" style="width:36px;height:36px;border-radius:11px;" title="Video Call">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         </button>
+        <button type="button" id="btn-chat-menu" class="btn btn-ghost" style="width:34px;height:36px;border-radius:11px;" title="Chat Options">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+        </button>
       </div>
     </header>
+
+    <div id="chat-menu-dropdown" class="glass-strong chat-menu-dropdown">
+      <button type="button" id="btn-chat-select-mode" class="attach-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Select Messages</span>
+      </button>
+      <button type="button" id="btn-chat-clear-all" class="attach-item" style="color:#fca5a5;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        <span>Clear Entire Chat</span>
+      </button>
+    </div>
+
+    <div id="chat-select-bar" class="chat-select-bar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" id="btn-select-cancel" class="btn btn-ghost" style="padding:6px 10px;font-size:11px;">Cancel</button>
+        <span id="select-count-label" class="mono" style="font-size:11px;font-weight:700;color:#7dd3fc;">0 selected</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button type="button" id="btn-select-all" class="btn btn-ghost" style="padding:6px 10px;font-size:11px;color:#38bdf8;">All</button>
+        <button type="button" id="btn-select-delete" class="btn btn-rose" style="padding:6px 12px;font-size:11px;">Delete</button>
+      </div>
+    </div>
 
     <div id="chat-messages" class="chat-messages"></div>
 
@@ -1014,6 +1108,10 @@
         <button type="button" id="btn-attach-photo" class="attach-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <span>Photo (Auto-Compressed)</span>
+        </button>
+        <button type="button" id="btn-attach-video" class="attach-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <span>Video Clip (Max 650 KB)</span>
         </button>
         <button type="button" id="btn-attach-doc" class="attach-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1223,17 +1321,30 @@
     </div>
   </section>
 
+  <!-- ==================== MODAL: CONFIRM CHAT / MESSAGE DELETE ==================== -->
+  <section id="delete-chat-modal" class="modal-backdrop">
+    <div class="glass-strong modal-box" style="text-align:center;">
+      <div id="delchat-title" style="font-size:16px;font-weight:800;color:#fff;">Delete Messages?</div>
+      <p id="delchat-desc" style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5;">Selected messages and media will be permanently deleted for both sides.</p>
+      <div class="grid-2">
+        <button type="button" id="btn-cancel-delchat" class="btn btn-ghost" style="padding:10px;">Cancel</button>
+        <button type="button" id="btn-confirm-delchat" class="btn btn-rose" style="padding:10px;">Delete</button>
+      </div>
+    </div>
+  </section>
+
   <!-- =========================================================================
        STEP 1 (ONLY SECTION TO EDIT): PASTE YOUR 6 FIREBASE VALUES BELOW
        ========================================================================= -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
       apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
-      authDomain: "miv-reservation-system.firebaseapp.com",
-      projectId: "miv-reservation-system",
-      storageBucket: "miv-reservation-system.firebasestorage.app",
-      messagingSenderId: "7639802660",
-      appId: "1:7639802660:web:d651f66699ee18466d89b1"
+  authDomain: "miv-reservation-system.firebaseapp.com",
+  projectId: "miv-reservation-system",
+  storageBucket: "miv-reservation-system.firebasestorage.app",
+  messagingSenderId: "7639802660",
+  appId: "1:7639802660:web:d651f66699ee18466d89b1",
+  measurementId: "G-Q8JP66CF9G"
     };
   </script>
 
@@ -1432,6 +1543,9 @@
       activeTab: 'chats',
       search: '',
       activeChatId: null,
+      chatSelectMode: false,
+      selectedMsgIds: new Set(),
+      pendingDeleteAction: null,
       lastTypingSent: 0,
       idleTimer: null,
       deferredPrompt: null,
@@ -1584,6 +1698,7 @@
       let lastPreview = 'Connected via Firebase';
       if (last) {
         if (last.mediaKind === 'photo') lastPreview = '📷 Photo';
+        else if (last.mediaKind === 'video') lastPreview = '🎬 Video';
         else if (last.mediaKind === 'voice') lastPreview = '🎤 Voice Note';
         else if (last.mediaKind === 'doc') lastPreview = '📄 ' + (last.mediaName || 'Document');
         else lastPreview = last.text || '';
@@ -2096,7 +2211,8 @@
           duration: meta.duration || 0,
           ts: Date.now()
         });
-        toast((kind === 'photo' ? 'Photo' : kind === 'voice' ? 'Voice note' : 'Document') + ' sent!', 'success');
+        const kindLabel = kind === 'photo' ? 'Photo' : kind === 'video' ? 'Video' : kind === 'voice' ? 'Voice note' : 'Document';
+        toast(kindLabel + ' sent!', 'success');
       } catch (e) {
         toast('Upload failed (max ~650 KB on free Spark plan)', 'error');
       }
@@ -2161,31 +2277,85 @@
 
     /* ---------- 11. NATIVE WEBRTC CALLING OVER FIRESTORE SIGNALING ---------- */
     let audioCtx = null;
-    function playRing() {
-      if (!state.ringtoneEnabled) return;
+    function unlockAudioCtx() {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         if (!audioCtx) audioCtx = new AC();
         if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) {}
+    }
+
+    function playRing() {
+      if (!state.ringtoneEnabled) return;
+      try {
+        unlockAudioCtx();
+        if (!audioCtx) return;
+
+        // Gentle mobile vibration pattern on incoming calls
+        if (navigator.vibrate && state.call.direction === 'incoming') {
+          navigator.vibrate([260, 120, 260]);
+        }
+
+        // Dynamics compressor maximizes loudness cleanly without distortion
+        const comp = audioCtx.createDynamicsCompressor();
+        comp.threshold.setValueAtTime(-12, audioCtx.currentTime);
+        comp.knee.setValueAtTime(18, audioCtx.currentTime);
+        comp.ratio.setValueAtTime(8, audioCtx.currentTime);
+        comp.attack.setValueAtTime(0.003, audioCtx.currentTime);
+        comp.release.setValueAtTime(0.18, audioCtx.currentTime);
+
+        const master = audioCtx.createGain();
+        master.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        comp.connect(master);
+        master.connect(audioCtx.destination);
+
         const now = audioCtx.currentTime;
-        [523.25, 659.25, 783.99].forEach((f, i) => {
-          const osc = audioCtx.createOscillator();
+        // Bright melodic smartphone-style dual-chime arpeggio (E5 - G#5 - B5 - E6, repeated)
+        const melody = [
+          { f: 659.25, t: 0.00, d: 0.24 },
+          { f: 830.61, t: 0.13, d: 0.24 },
+          { f: 987.77, t: 0.26, d: 0.26 },
+          { f: 1318.51, t: 0.40, d: 0.42 },
+          { f: 987.77, t: 0.88, d: 0.22 },
+          { f: 1318.51, t: 1.04, d: 0.52 }
+        ];
+
+        melody.forEach((n) => {
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
           const g = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(f, now + i * 0.14);
-          g.gain.setValueAtTime(0.001, now + i * 0.14);
-          g.gain.exponentialRampToValueAtTime(0.07, now + i * 0.14 + 0.03);
-          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.14 + 0.28);
-          osc.connect(g);
-          g.connect(audioCtx.destination);
-          osc.start(now + i * 0.14);
-          osc.stop(now + i * 0.14 + 0.3);
+
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(n.f, now + n.t);
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(n.f * 2, now + n.t);
+
+          const g2 = audioCtx.createGain();
+          g2.gain.setValueAtTime(0.28, now + n.t);
+
+          g.gain.setValueAtTime(0.001, now + n.t);
+          g.gain.linearRampToValueAtTime(0.9, now + n.t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+
+          osc1.connect(g);
+          osc2.connect(g2);
+          g2.connect(g);
+          g.connect(comp);
+
+          osc1.start(now + n.t);
+          osc2.start(now + n.t);
+          osc1.stop(now + n.t + n.d + 0.03);
+          osc2.stop(now + n.t + n.d + 0.03);
         });
       } catch (e) {}
     }
 
-    function stopRing() { clearInterval(state.call.ringId); state.call.ringId = null; }
+    function stopRing() {
+      clearInterval(state.call.ringId);
+      state.call.ringId = null;
+      try { if (navigator.vibrate) navigator.vibrate(0); } catch (e) {}
+    }
 
     function getIceServers() {
       const servers = [
@@ -2533,9 +2703,72 @@
     }
 
     /* ---------- 12. CHAT & CONTACT MODAL ---------- */
+    function setChatSelectMode(enabled) {
+      state.chatSelectMode = !!enabled;
+      if (!enabled) state.selectedMsgIds.clear();
+      $('chat-menu-dropdown').classList.remove('open');
+      $('chat-select-bar').classList.toggle('open', state.chatSelectMode);
+      updateSelectCountUI();
+      if (state.activeChatId) renderMessages(state.activeChatId);
+    }
+
+    function updateSelectCountUI() {
+      const count = state.selectedMsgIds.size;
+      const lbl = $('select-count-label');
+      if (lbl) lbl.textContent = count + ' selected';
+      const delBtn = $('btn-select-delete');
+      if (delBtn) delBtn.style.opacity = count > 0 ? '1' : '0.45';
+    }
+
+    function toggleSelectMessage(docId) {
+      if (!docId) return;
+      if (state.selectedMsgIds.has(docId)) state.selectedMsgIds.delete(docId);
+      else state.selectedMsgIds.add(docId);
+      updateSelectCountUI();
+      if (state.activeChatId) renderMessages(state.activeChatId);
+    }
+
+    function openDeleteConfirmModal(mode) {
+      if (!state.activeChatId) return;
+      const msgs = state.messagesByPeer[state.activeChatId] || [];
+      if (mode === 'selected') {
+        const ids = Array.from(state.selectedMsgIds);
+        if (ids.length === 0) { toast('Select at least one message', 'info'); return; }
+        state.pendingDeleteAction = { mode: 'selected', ids };
+        $('delchat-title').textContent = 'Delete ' + ids.length + ' Item' + (ids.length > 1 ? 's' : '') + '?';
+        $('delchat-desc').textContent = 'Selected messages, photos, voice notes, or documents will be permanently removed from this chat.';
+      } else {
+        if (msgs.length === 0) { toast('Chat is already empty', 'info'); return; }
+        state.pendingDeleteAction = { mode: 'clear', ids: msgs.map((m) => m._docId).filter(Boolean) };
+        $('delchat-title').textContent = 'Clear Entire Chat?';
+        $('delchat-desc').textContent = 'All ' + msgs.length + ' messages and shared media in this conversation will be permanently deleted.';
+      }
+      $('chat-menu-dropdown').classList.remove('open');
+      $('delete-chat-modal').classList.add('open');
+    }
+
+    async function executePendingDelete() {
+      const act = state.pendingDeleteAction;
+      state.pendingDeleteAction = null;
+      $('delete-chat-modal').classList.remove('open');
+      if (!act || !act.ids || act.ids.length === 0 || !db || !state.fbUser) return;
+
+      try {
+        await Promise.all(act.ids.map((id) => deleteDoc(pubDoc('messages', id)).catch(() => {})));
+        setChatSelectMode(false);
+        toast(act.mode === 'clear' ? 'Chat cleared!' : 'Deleted ' + act.ids.length + ' item' + (act.ids.length > 1 ? 's' : ''), 'success');
+      } catch (e) {
+        toast('Could not delete messages', 'error');
+      }
+    }
+
     function openChat(fid) {
       const cv = getContactView(fid);
       state.activeChatId = cv.id;
+      state.chatSelectMode = false;
+      state.selectedMsgIds.clear();
+      $('chat-select-bar').classList.remove('open');
+      $('chat-menu-dropdown').classList.remove('open');
       const inCount = (state.messagesByPeer[cv.id] || []).filter((m) => m.fromId === cv.id).length;
       state.readCounts[cv.id] = inCount;
       renderContacts();
@@ -2659,12 +2892,24 @@
       const myId = state.myProfile.id;
       (state.messagesByPeer[fid] || []).forEach((m) => {
         const fromMe = m.fromId === myId;
+        const isSel = state.chatSelectMode && state.selectedMsgIds.has(m._docId);
         const row = document.createElement('div');
-        row.className = 'msg-row ' + (fromMe ? 'me' : 'them');
+        row.className = 'msg-row ' + (fromMe ? 'me' : 'them') + (state.chatSelectMode ? ' selectable' : '') + (isSel ? ' selected' : '');
+        row.dataset.msgId = m._docId || '';
 
         let bodyHtml = '';
         if (m.mediaKind === 'photo' && m.mediaData) {
           bodyHtml = `<img src="${m.mediaData}" data-lb-doc="${esc(m._docId)}" class="media-photo-thumb" alt="Photo" />`;
+        } else if (m.mediaKind === 'video' && m.mediaData) {
+          bodyHtml = `
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <video controls playsinline preload="metadata" src="${m.mediaData}" class="media-video-player"></video>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span class="mono" style="font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎬 ${esc(m.mediaName || 'Video')} • ${esc(fmtBytes(m.mediaSize))}</span>
+                <button type="button" data-dl-doc="${esc(m._docId)}" class="btn btn-cyan" style="padding:4px 9px;font-size:10px;flex-shrink:0;">Save</button>
+              </div>
+            </div>
+          `;
         } else if (m.mediaKind === 'voice' && m.mediaData) {
           bodyHtml = `
             <div class="media-voice-box">
@@ -2691,7 +2936,12 @@
           bodyHtml = `<div>${esc(m.text)}</div>`;
         }
 
+        const checkHtml = state.chatSelectMode
+          ? `<div class="msg-check">${isSel ? '✓' : ''}</div>`
+          : '';
+
         row.innerHTML = `
+          ${!fromMe ? checkHtml : ''}
           <div class="msg-bubble ${fromMe ? 'me' : 'them'}">
             ${bodyHtml}
             <div class="msg-meta">
@@ -2699,10 +2949,11 @@
               ${fromMe ? `<span style="color:#38bdf8;font-weight:700;">✓✓</span>` : ''}
             </div>
           </div>
+          ${fromMe ? checkHtml : ''}
         `;
         box.appendChild(row);
       });
-      box.scrollTop = box.scrollHeight;
+      if (!state.chatSelectMode) box.scrollTop = box.scrollHeight;
     }
 
     function renderInCallMessages(fid) {
@@ -2714,7 +2965,7 @@
         const fromMe = m.fromId === myId;
         const row = document.createElement('div');
         row.className = 'msg-row ' + (fromMe ? 'me' : 'them');
-        const txt = m.mediaKind ? (m.mediaKind === 'photo' ? '📷 Photo' : m.mediaKind === 'voice' ? '🎤 Voice Note' : '📄 ' + m.mediaName) : m.text;
+        const txt = m.mediaKind ? (m.mediaKind === 'photo' ? '📷 Photo' : m.mediaKind === 'video' ? '🎬 Video' : m.mediaKind === 'voice' ? '🎤 Voice Note' : '📄 ' + m.mediaName) : m.text;
         row.innerHTML = `<div class="msg-bubble ${fromMe ? 'me' : 'them'}" style="padding:7px 11px;font-size:12px;">${esc(txt)}</div>`;
         box.appendChild(row);
       });
@@ -2856,37 +3107,33 @@
       ['click', 'touchstart', 'keydown', 'mousemove'].forEach((ev) => {
         document.addEventListener(ev, resetIdle, { passive: true });
       });
+      ['click', 'touchstart'].forEach((ev) => {
+        document.addEventListener(ev, unlockAudioCtx, { once: true, passive: true });
+      });
 
-      const remembered = loadRememberedProfile();
-      if (remembered && remembered.id && remembered.pinHash) {
-        state.myProfile = remembered;
-        showLockScreen('Enter your 4-digit personal PIN');
-      } else {
-        showAuthScreen();
-      }
-
-      // Photo Picker (Avatar)
+      // Avatar Photo Picker (Setup, Own Profile, Contact Custom Photo)
       on('photo-picker', 'change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
         try {
-          const b64 = await compressAvatarPhoto(file);
+          const dataUrl = await compressAvatarPhoto(file);
           if (state.photoTarget === 'setup') {
-            state.setupTempAvatar = b64;
-            setAvatar($('setup-avatar'), b64, $('setup-name').value || 'FC');
-            toast('Photo ready!', 'success');
+            state.setupTempAvatar = dataUrl;
+            setAvatar($('setup-avatar'), dataUrl, $('setup-name').value || 'FC');
           } else if (state.photoTarget === 'own' && state.myProfile && db && state.fbUser) {
-            state.myProfile.avatar = b64;
+            state.myProfile.avatar = dataUrl;
             saveRememberedProfile(state.myProfile);
-            await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: b64 });
+            await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: dataUrl });
             renderProfile();
-            toast('Your photo updated!', 'success');
+            toast('Profile photo updated!', 'success');
           } else if (state.photoTarget) {
-            await saveContactMeta(state.photoTarget, { avatar: b64 });
-            setAvatar($('cm-avatar'), b64, $('cm-nick-input').value || state.photoTarget);
+            await saveContactMeta(state.photoTarget, { avatar: dataUrl });
+            const cv = getContactView(state.photoTarget);
+            setAvatar($('cm-avatar'), dataUrl, cv.name);
             toast('Contact photo updated!', 'success');
           }
-        } catch (err) { toast('Could not load image', 'error'); }
+        } catch (err) { toast('Could not update photo', 'error'); }
+        e.target.value = '';
       });
 
       // Chat Media Pickers
@@ -2897,6 +3144,22 @@
             const dataUrl = await compressChatPhoto(file);
             await sendSparkMedia(state.activeChatId, 'photo', dataUrl, { name: file.name, mime: 'image/jpeg', size: file.size });
           } catch (err) { toast('Could not process photo', 'error'); }
+        }
+        e.target.value = '';
+      });
+
+      on('media-video-picker', 'change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file && state.activeChatId) {
+          if (file.size > MAX_SPARK_DOC_BYTES) {
+            toast('Max 650 KB per video clip on free Spark plan', 'error');
+            e.target.value = '';
+            return;
+          }
+          try {
+            const dataUrl = await blobToDataUrl(file);
+            await sendSparkMedia(state.activeChatId, 'video', dataUrl, { name: file.name, mime: file.type || 'video/mp4', size: file.size });
+          } catch (err) { toast('Could not process video', 'error'); }
         }
         e.target.value = '';
       });
@@ -2983,22 +3246,50 @@
       // Chat View & Media Controls
       on('btn-chat-back', 'click', () => {
         stopVoiceRecording(true);
+        setChatSelectMode(false);
         $('attach-menu').classList.remove('open');
+        $('chat-menu-dropdown').classList.remove('open');
         $('chat-view').classList.remove('open');
         state.activeChatId = null;
       });
+      on('btn-chat-menu', 'click', (e) => {
+        e.stopPropagation();
+        $('attach-menu').classList.remove('open');
+        $('chat-menu-dropdown').classList.toggle('open');
+      });
+      on('btn-chat-select-mode', 'click', () => setChatSelectMode(true));
+      on('btn-chat-clear-all', 'click', () => openDeleteConfirmModal('clear'));
+      on('btn-select-cancel', 'click', () => setChatSelectMode(false));
+      on('btn-select-all', 'click', () => {
+        if (!state.activeChatId) return;
+        const msgs = state.messagesByPeer[state.activeChatId] || [];
+        if (state.selectedMsgIds.size === msgs.length) {
+          state.selectedMsgIds.clear();
+        } else {
+          msgs.forEach((m) => { if (m._docId) state.selectedMsgIds.add(m._docId); });
+        }
+        updateSelectCountUI();
+        renderMessages(state.activeChatId);
+      });
+      on('btn-select-delete', 'click', () => openDeleteConfirmModal('selected'));
+      on('btn-cancel-delchat', 'click', () => {
+        state.pendingDeleteAction = null;
+        $('delete-chat-modal').classList.remove('open');
+      });
+      on('btn-confirm-delchat', 'click', executePendingDelete);
+
       on('btn-chat-edit', 'click', () => { if (state.activeChatId) openContactModal(state.activeChatId); });
       on('btn-chat-audio', 'click', () => { if (state.activeChatId) startOutgoingCall(state.activeChatId, 'audio'); });
       on('btn-chat-video', 'click', () => { if (state.activeChatId) startOutgoingCall(state.activeChatId, 'video'); });
       on('input-chat-msg', 'focus', () => {
         $('attach-menu').classList.remove('open');
-        syncChatViewport();
-        setTimeout(syncChatViewport, 150);
+        $('chat-menu-dropdown').classList.remove('open');
+        setTimeout(syncChatViewport, 120);
       });
       on('input-chat-msg', 'input', () => {
         if (!state.activeChatId || !db || !state.fbUser || !state.myProfile) return;
         const now = Date.now();
-        if (now - state.lastTypingSent > 1500) {
+        if (now - state.lastTypingSent > 1800) {
           state.lastTypingSent = now;
           setDoc(pubDoc('typing', state.myProfile.id + '__' + state.activeChatId), {
             fromId: state.myProfile.id,
@@ -3009,19 +3300,65 @@
       });
       on('form-chat-send', 'submit', (e) => {
         e.preventDefault();
-        sendChatMessage(state.activeChatId, $('input-chat-msg').value);
-        $('input-chat-msg').value = '';
+        if (!state.activeChatId) return;
+        const inp = $('input-chat-msg');
+        sendChatMessage(state.activeChatId, inp.value);
+        inp.value = '';
       });
-
-      on('btn-chat-attach', 'click', () => $('attach-menu').classList.toggle('open'));
-      on('btn-attach-photo', 'click', () => { $('attach-menu').classList.remove('open'); $('media-photo-picker').click(); });
-      on('btn-attach-doc', 'click', () => { $('attach-menu').classList.remove('open'); $('media-doc-picker').click(); });
-      on('btn-chat-mic', 'click', startVoiceRecording);
+      on('btn-chat-attach', 'click', (e) => {
+        e.stopPropagation();
+        $('chat-menu-dropdown').classList.remove('open');
+        $('attach-menu').classList.toggle('open');
+      });
+      on('btn-attach-photo', 'click', () => {
+        $('attach-menu').classList.remove('open');
+        const p = $('media-photo-picker');
+        if (p) { p.value = ''; p.click(); }
+      });
+      on('btn-attach-video', 'click', () => {
+        $('attach-menu').classList.remove('open');
+        const v = $('media-video-picker');
+        if (v) { v.value = ''; v.click(); }
+      });
+      on('btn-attach-doc', 'click', () => {
+        $('attach-menu').classList.remove('open');
+        const d = $('media-doc-picker');
+        if (d) { d.value = ''; d.click(); }
+      });
+      on('btn-chat-mic', 'click', () => startVoiceRecording());
       on('btn-rec-cancel', 'click', () => stopVoiceRecording(true));
       on('btn-rec-send', 'click', () => stopVoiceRecording(false));
 
-      // Lightbox & Doc Download
+      // Lightbox, Doc Download & Message Selection (Click + Long-Press)
+      let pressTimer = null;
+      const startLongPress = (e) => {
+        if (state.chatSelectMode) return;
+        const row = e.target.closest('.msg-row[data-msg-id]');
+        if (!row || !row.dataset.msgId) return;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+          state.chatSelectMode = true;
+          state.selectedMsgIds.add(row.dataset.msgId);
+          $('chat-select-bar').classList.add('open');
+          updateSelectCountUI();
+          if (state.activeChatId) renderMessages(state.activeChatId);
+        }, 480);
+      };
+      const cancelLongPress = () => clearTimeout(pressTimer);
+      on('chat-messages', 'touchstart', startLongPress);
+      on('chat-messages', 'touchend', cancelLongPress);
+      on('chat-messages', 'touchmove', cancelLongPress);
+      on('chat-messages', 'mousedown', startLongPress);
+      on('chat-messages', 'mouseup', cancelLongPress);
+      on('chat-messages', 'mouseleave', cancelLongPress);
+
       on('chat-messages', 'click', (e) => {
+        $('chat-menu-dropdown').classList.remove('open');
+        if (state.chatSelectMode) {
+          const row = e.target.closest('.msg-row[data-msg-id]');
+          if (row && row.dataset.msgId) toggleSelectMessage(row.dataset.msgId);
+          return;
+        }
         const lbImg = e.target.closest('[data-lb-doc]');
         if (lbImg && state.activeChatId) {
           const m = (state.messagesByPeer[state.activeChatId] || []).find((x) => x._docId === lbImg.dataset.lbDoc);
@@ -3132,6 +3469,7 @@
         toast('PIN updated!', 'success');
       });
       on('btn-toggle-ring', 'click', () => { state.ringtoneEnabled = !state.ringtoneEnabled; renderProfile(); });
+      on('btn-test-ring', 'click', () => { playRing(); toast('Playing ringtone at full volume', 'info'); });
       on('form-turn-cfg', 'submit', (e) => {
         e.preventDefault();
         state.customTurn = {
@@ -3196,6 +3534,13 @@
       });
 
       await initFirebase();
+      const remembered = loadRememberedProfile();
+      if (remembered && remembered.id && remembered.pinHash) {
+        state.myProfile = remembered;
+        showLockScreen('Enter your 4-digit personal PIN');
+      } else {
+        showAuthScreen();
+      }
     }
 
     if (document.readyState === 'loading') {
