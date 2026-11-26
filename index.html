@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#040814" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -17,7 +17,7 @@
        ===================================================================== -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+       apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
   authDomain: "miv-reservation-system.firebaseapp.com",
   projectId: "miv-reservation-system",
   storageBucket: "miv-reservation-system.firebasestorage.app",
@@ -555,12 +555,16 @@
     /* Fullscreen Pinned Chat View */
     #chat-view {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100dvh;
       z-index: 200;
       max-width: 560px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
+      overscroll-behavior: none;
       background: var(--bg-deep);
       background-image:
         radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.11) 0%, transparent 45%),
@@ -621,8 +625,10 @@
     }
 
     #chat-messages {
-      flex: 1;
+      flex: 1 1 0%;
+      min-height: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 14px 12px;
       display: flex;
       flex-direction: column;
@@ -1341,9 +1347,9 @@
 
     const APP_NAMESPACE = 'famcall-hud';
     const LS_PROFILE_KEY = 'famcall_remembered_profile_v4';
+    const LS_E2EE_JWK_KEY = 'famcall_e2ee_jwk_v4';
     const LS_RING_KEY = 'famcall_ringtone_v4';
     const LS_TURN_KEY = 'famcall_custom_turn_v4';
-    const IDLE_LOCK_MS = 3 * 60 * 1000;
 
     function cleanId(raw) {
       return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
@@ -1590,15 +1596,25 @@
       return JSON.parse(textDec.decode(pt));
     }
     async function ensureUserE2EEKeys(prof, plainPin) {
-      if (!hasWebCrypto || !prof || !plainPin) return;
+      if (!hasWebCrypto || !prof) return;
       try {
         state.e2ee.sharedKeys.clear();
         state.e2ee.pairKeys.clear();
+        if (!plainPin) {
+          const cached = JSON.parse(localStorage.getItem(LS_E2EE_JWK_KEY) || 'null');
+          if (cached && cached.id === prof.id && cached.jwk) {
+            state.e2ee.privateKeyJwk = cached.jwk;
+            state.e2ee.privateKey = await crypto.subtle.importKey('jwk', cached.jwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
+            state.e2ee.ready = true;
+          }
+          return;
+        }
         if (prof.pubKeyJwk && prof.encPrivKey) {
           const privJwk = await unwrapPrivateJwk(prof.encPrivKey, plainPin, prof.id);
           state.e2ee.privateKeyJwk = privJwk;
           state.e2ee.privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
           state.e2ee.ready = true;
+          try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
           return;
         }
         const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
@@ -1608,6 +1624,7 @@
         state.e2ee.privateKeyJwk = privJwk;
         state.e2ee.privateKey = kp.privateKey;
         state.e2ee.ready = true;
+        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
         prof.pubKeyJwk = pubKeyJwk;
         prof.encPrivKey = encPrivKey;
         if (db && state.fbUser) {
@@ -1683,7 +1700,6 @@
       setupPhotoData: '',
       isLocked: true,
       enteredPin: '',
-      idleTimer: null,
       activeTab: 'chats',
       activeChatId: null,
       search: '',
@@ -1874,7 +1890,7 @@
           if (!state.isLocked && state.myProfile && !state.listenersStarted) {
             const snap = await getDoc(pubDoc('profiles', state.myProfile.id)).catch(() => null);
             if (snap && snap.exists()) state.myProfile = { ...state.myProfile, ...snap.data() };
-            if (state.sessionPlainPin) await ensureUserE2EEKeys(state.myProfile, state.sessionPlainPin);
+            await ensureUserE2EEKeys(state.myProfile, state.sessionPlainPin);
             startFirestoreListeners();
           }
           return true;
@@ -2337,7 +2353,24 @@
       scheduleContactsRender();
 
       $('chat-view').classList.remove('hidden');
+      syncChatViewport();
       renderMessages(state.activeChatId);
+    }
+
+    function syncChatViewport() {
+      const cv = $('chat-view');
+      if (!cv || cv.classList.contains('hidden')) return;
+      const vv = window.visualViewport;
+      if (vv) {
+        cv.style.top = vv.offsetTop + 'px';
+        cv.style.height = vv.height + 'px';
+      } else {
+        cv.style.top = '0px';
+        cv.style.height = '100dvh';
+      }
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+      const box = $('chat-messages');
+      if (box && !state.chatSelectMode) box.scrollTop = box.scrollHeight;
     }
 
     function closeChat() {
@@ -2345,7 +2378,10 @@
       stopVoiceRecording(true);
       state.activeChatId = null;
       state.renderedChatId = null;
-      $('chat-view').classList.add('hidden');
+      const cv = $('chat-view');
+      cv.classList.add('hidden');
+      cv.style.top = '0px';
+      cv.style.height = '100dvh';
     }
 
     function enterSelectMode(initialMsgId) {
@@ -2834,23 +2870,12 @@
       $('lock-screen').classList.add('hidden');
       $('app-shell').classList.remove('hidden');
       renderProfile();
-      resetIdleTimer();
       if (db && state.fbUser && !state.listenersStarted) {
         startFirestoreListeners();
       } else {
         setP2PStatus('connecting', 'Connecting...');
         initFirebase();
       }
-    }
-
-    function resetIdleTimer() {
-      clearTimeout(state.idleTimer);
-      if (state.isLocked || !state.myProfile) return;
-      state.idleTimer = setTimeout(() => {
-        if (!state.isLocked && state.call.status === 'IDLE') {
-          showLockScreen('Auto-locked after 3 minutes of inactivity');
-        }
-      }, IDLE_LOCK_MS);
     }
 
     function updatePinDots() {
@@ -2899,8 +2924,8 @@
       stopVoiceRecording(true);
       await setPresence(false);
       stopFirestoreListeners();
-      clearTimeout(state.idleTimer);
       saveRememberedProfile(null);
+      try { localStorage.removeItem(LS_E2EE_JWK_KEY); } catch (e) {}
       state.myProfile = null;
       state.sessionPlainPin = null;
       state.friendIds = new Set();
@@ -2938,12 +2963,22 @@
     }
 
     function wireEvents() {
-      // Idle reset
-      ['pointerdown', 'keydown'].forEach((e) => window.addEventListener(e, resetIdleTimer, { passive: true }));
+      // Presence & mobile keyboard viewport pinning
       window.addEventListener('beforeunload', () => { setPresence(false); });
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !state.isLocked && state.myProfile && db && state.fbUser) setPresence(true);
       });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncChatViewport);
+        window.visualViewport.addEventListener('scroll', syncChatViewport);
+      }
+      window.addEventListener('resize', syncChatViewport);
+      on('input-chat-msg', 'focus', () => {
+        syncChatViewport();
+        setTimeout(syncChatViewport, 120);
+        setTimeout(syncChatViewport, 320);
+      });
+      on('input-chat-msg', 'blur', () => setTimeout(syncChatViewport, 120));
 
       // PWA Install Prompt
       window.addEventListener('beforeinstallprompt', (e) => {
@@ -3483,11 +3518,11 @@
       const addParam = new URLSearchParams(location.search).get('add');
       if (addParam && $('input-req-id')) $('input-req-id').value = cleanId(addParam);
 
-      // Instant startup: show Lock or Auth immediately while Firebase initializes in background
+      // Instant startup: resume remembered session directly (no auto-lock); users sign out manually
       const remembered = loadRememberedProfile();
       if (remembered && remembered.id && remembered.pinHash) {
         state.myProfile = remembered;
-        showLockScreen('Enter your 4-digit personal PIN');
+        ensureUserE2EEKeys(state.myProfile, null).then(() => unlockAndEnterApp());
       } else {
         showAuthScreen();
       }
