@@ -13,14 +13,13 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23050a14'/%3E%3Cstop offset='55%25' stop-color='%230a1e3d'/%3E%3Cstop offset='100%25' stop-color='%230284c7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='28' fill='url(%23g)'/%3E%3Crect x='4' y='4' width='112' height='112' rx='24' fill='none' stroke='%2338bdf8' stroke-opacity='0.5' stroke-width='2.5'/%3E%3Cpath d='M84 74.5v9.8a6.5 6.5 0 0 1-7.1 6.5 64.5 64.5 0 0 1-28.1-10 63.5 63.5 0 0 1-19.6-19.6 64.5 64.5 0 0 1-10-28.2A6.5 6.5 0 0 1 25.7 26h9.8a6.5 6.5 0 0 1 6.5 5.6c.4 3.1 1.2 6.2 2.3 9.1a6.5 6.5 0 0 1-1.5 6.9l-4.2 4.2a52 52 0 0 0 19.6 19.6l4.2-4.2a6.5 6.5 0 0 1 6.9-1.5c2.9 1.1 6 1.9 9.1 2.3a6.5 6.5 0 0 1 5.6 6.5z' fill='none' stroke='%23e0f2fe' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M67 34c4.5-4.5 11.8-4.5 16.3 0 4.5 4.5 4.5 11.8 0 16.3L75 58.6l-8.3-8.3c-4.5-4.5-4.5-11.8 0-16.3z' fill='%2338bdf8' fill-opacity='0.32' stroke='%2338bdf8' stroke-width='3.2'/%3E%3C/svg%3E" />
   <title>FamCall HUD — Family Connect</title>
 
-  <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
 
   <style>
     /* =====================================================================
-       1. STRICT LAYER ISOLATION (TOP OF STYLESHEET)
+       1. STRICT LAYER ISOLATION
        ===================================================================== */
     .screen-layer { position: fixed; inset: 0; z-index: 60; display: none; flex-direction: column; background: var(--bg-deep); overflow: hidden; }
     .screen-layer.open { display: flex; }
@@ -68,7 +67,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    button, input { font-family: inherit; color: inherit; }
+    button, input, textarea { font-family: inherit; color: inherit; }
     button { cursor: pointer; border: none; background: none; padding: 0; }
     .mono { font-family: var(--font-mono); }
 
@@ -191,7 +190,6 @@
     .status-dot.connecting { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: pulseDot 1.1s ease-in-out infinite; }
     .status-dot.online { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
     .status-dot.offline { background: var(--rose); }
-    .status-dot.duplicate { background: var(--rose); box-shadow: 0 0 9px var(--rose); }
 
     @keyframes pulseDot {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -407,25 +405,16 @@
       padding-bottom: 16px;
     }
 
-    .saved-acc-card {
-      border-radius: 16px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
     .setup-warning {
       margin-top: 6px;
-      padding: 8px 10px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
       background: rgba(239, 68, 68, 0.14);
       border: 1px solid rgba(239, 68, 68, 0.48);
       color: #fca5a5;
       font-size: 11px;
       font-weight: 600;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     #lock-screen {
@@ -558,11 +547,6 @@
     .msg-bubble.them { background: rgba(15, 23, 42, 0.88); border: 1px solid var(--border-subtle); border-bottom-left-radius: 4px; color: #e2e8f0; }
     .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 5px; font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); }
 
-    /* Inline Media Bubbles */
-    .media-progress-wrap { min-width: 190px; display: flex; flex-direction: column; gap: 6px; }
-    .media-progress-bar { width: 100%; height: 6px; border-radius: 999px; background: rgba(15, 23, 42, 0.85); overflow: hidden; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .media-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #38bdf8, #10b981); box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); transition: width 0.15s linear; }
-
     .media-photo-thumb {
       display: block;
       max-width: 220px;
@@ -573,18 +557,8 @@
       border: 1px solid rgba(56, 189, 248, 0.35);
     }
 
-    .media-voice-box {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 215px;
-    }
-    .media-voice-box audio {
-      width: 100%;
-      height: 34px;
-      border-radius: 10px;
-      filter: invert(0.92) hue-rotate(180deg);
-    }
+    .media-voice-box { display: flex; flex-direction: column; gap: 6px; min-width: 215px; }
+    .media-voice-box audio { width: 100%; height: 34px; border-radius: 10px; filter: invert(0.92) hue-rotate(180deg); }
 
     .media-doc-card {
       display: flex;
@@ -661,7 +635,7 @@
     .credit { text-align: center; font-size: 11px; color: var(--text-muted); margin: 4px 0 0; }
 
     /* =====================================================================
-       10. FINAL UTILITY OVERRIDE (ALWAYS AT VERY END)
+       10. FINAL UTILITY OVERRIDE
        ===================================================================== */
     .hidden, input[type="file"] { display: none !important; }
   </style>
@@ -693,7 +667,7 @@
         <div class="header-title-wrap">
           <div class="header-brand-row">
             <h1 class="brand-name">FamCall HUD</h1>
-            <button type="button" id="btn-p2p-status" class="status-pill" title="Tap to Reconnect">
+            <button type="button" id="btn-p2p-status" class="status-pill" title="Tap to Sync">
               <span id="p2p-dot" class="status-dot connecting"></span>
               <span id="p2p-label">Connecting...</span>
             </button>
@@ -872,8 +846,8 @@
     </nav>
   </div>
 
-  <!-- ==================== SCREEN LAYER 1: AUTH / SIGN-IN & CREATE PROFILE ==================== -->
-  <section id="auth-screen" class="screen-layer">
+  <!-- ==================== SCREEN LAYER 1: AUTH / SIGN-IN & CREATE PROFILE (OPEN BY DEFAULT) ==================== -->
+  <section id="auth-screen" class="screen-layer open">
     <div class="auth-container">
       <div class="row-between">
         <div style="display:flex;align-items:center;gap:10px;">
@@ -893,10 +867,10 @@
       </div>
 
       <div id="config-warning-banner" class="setup-warning hidden" style="margin-top:0;">
-        Firebase not configured yet. Open <b>index.html</b> and paste your 3rd Web App <code>firebaseConfig</code> into <code>USER_FIREBASE_CONFIG</code>.
+        Firebase not configured yet. Open <b>index.html</b> and paste your 6 Firebase keys into <code>FAMCALL_FIREBASE_CONFIG</code>.
       </div>
 
-      <!-- Sign In to Existing Family ID (Multi-Device / Multi-Browser) -->
+      <!-- Sign In to Existing Family ID -->
       <form id="form-signin" class="glass-strong panel-card" novalidate>
         <div class="row-between">
           <span class="section-title" style="color:#38bdf8;">Sign In (Existing Family ID)</span>
@@ -1036,7 +1010,6 @@
     <div id="chat-messages" class="chat-messages"></div>
 
     <div class="chat-composer">
-      <!-- Glass Attach Menu -->
       <div id="attach-menu" class="glass-strong attach-menu">
         <button type="button" id="btn-attach-photo" class="attach-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -1048,7 +1021,6 @@
         </button>
       </div>
 
-      <!-- Standard Text + Attach + Voice Composer -->
       <form id="form-chat-send" class="inline-form">
         <button type="button" id="btn-chat-attach" class="btn btn-ghost" style="width:40px;height:40px;border-radius:12px;flex-shrink:0;color:#38bdf8;" title="Attach Photo or Document">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -1062,7 +1034,6 @@
         </button>
       </form>
 
-      <!-- Live Voice Recording HUD -->
       <div id="voice-rec-hud" class="rec-hud hidden">
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="rec-dot"></span>
@@ -1100,7 +1071,6 @@
       </div>
     </div>
 
-    <!-- In-Call Quick Chat Drawer -->
     <div id="incall-chat-drawer" class="glass-strong">
       <div class="row-between" style="padding:10px 14px;border-bottom:1px solid rgba(56,189,248,0.2);">
         <span class="section-title" style="color:#38bdf8;">In-Call Chat</span>
@@ -1253,6 +1223,20 @@
     </div>
   </section>
 
+  <!-- =========================================================================
+       STEP 1 (ONLY SECTION TO EDIT): PASTE YOUR 6 FIREBASE VALUES BELOW
+       ========================================================================= -->
+  <script>
+    window.FAMCALL_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+      authDomain: "miv-reservation-system.firebaseapp.com",
+      projectId: "miv-reservation-system",
+      storageBucket: "miv-reservation-system.firebasestorage.app",
+      messagingSenderId: "7639802660",
+      appId: "1:7639802660:web:d651f66699ee18466d89b1"
+    };
+  </script>
+
   <!-- ==================== APPLICATION LOGIC (FIREBASE SPARK + WEBRTC) ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1262,25 +1246,11 @@
       addDoc, collection, onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* =========================================================================
-       FIREBASE CONFIGURATION (PASTE YOUR 3RD WEB APP CONFIG FOR GITHUB PAGES)
-       ========================================================================= */
-   const firebaseConfig = {
-  apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
-  authDomain: "miv-reservation-system.firebaseapp.com",
-  projectId: "miv-reservation-system",
-  storageBucket: "miv-reservation-system.firebasestorage.app",
-  messagingSenderId: "7639802660",
-  appId: "1:7639802660:web:d651f66699ee18466d89b1",
-  measurementId: "G-Q8JP66CF9G"
-};
-
-    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config)
+    const _activeFirebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config)
       ? JSON.parse(__firebase_config)
-      : USER_FIREBASE_CONFIG;
+      : (window.FAMCALL_FIREBASE_CONFIG || {});
 
-    // Isolated namespace so FamCall never conflicts with your other 2 web apps
-    const appId = (typeof __app_id !== 'undefined' && __app_id)
+    const _activeAppId = (typeof __app_id !== 'undefined' && __app_id)
       ? __app_id
       : 'famcall-hud';
 
@@ -1288,8 +1258,9 @@
     const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
 
     const IDLE_MS = 3 * 60 * 1000;
-    const MAX_SPARK_DOC_BYTES = 650 * 1024; // 650 KB safe limit for Spark Firestore docs
+    const MAX_SPARK_DOC_BYTES = 650 * 1024;
     const ONLINE_TTL_MS = 65000;
+    const LAST_PROFILE_KEY = 'famcall_fb_last_profile_v1';
 
     let fbApp = null;
     let auth = null;
@@ -1357,6 +1328,25 @@
       return h.toString(16).padStart(8, '0');
     }
 
+    function saveRememberedProfile(prof) {
+      try {
+        if (!prof) { localStorage.removeItem(LAST_PROFILE_KEY); return; }
+        localStorage.setItem(LAST_PROFILE_KEY, JSON.stringify({
+          id: prof.id,
+          name: prof.name,
+          pinHash: prof.pinHash,
+          avatar: prof.avatar || null
+        }));
+      } catch (e) {}
+    }
+
+    function loadRememberedProfile() {
+      try {
+        const raw = localStorage.getItem(LAST_PROFILE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
     function blobToDataUrl(blob) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1377,9 +1367,9 @@
       } catch (e) { toast('Download failed', 'error'); }
     }
 
-    /* ---------- 2. FIRESTORE PATH HELPERS (RULE 1: STRICT PATHS) ---------- */
-    const pubCol = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
-    const pubDoc = (name, id) => doc(db, 'artifacts', appId, 'public', 'data', name, id);
+    /* ---------- 2. FIRESTORE PATH HELPERS ---------- */
+    const pubCol = (name) => collection(db, 'artifacts', _activeAppId, 'public', 'data', name);
+    const pubDoc = (name, id) => doc(db, 'artifacts', _activeAppId, 'public', 'data', name, id);
 
     /* ---------- 3. PWA SERVICE WORKER ---------- */
     function initPWA() {
@@ -1617,19 +1607,19 @@
     /* ---------- 7. FIREBASE INITIALIZATION & REAL-TIME LISTENERS ---------- */
     async function initFirebase() {
       const pill = $('auth-cloud-pill');
-      if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === 'PASTE_YOUR_API_KEY') {
+      const warn = $('config-warning-banner');
+      if (!_activeFirebaseConfig || !_activeFirebaseConfig.apiKey || _activeFirebaseConfig.apiKey === 'PASTE_YOUR_API_KEY') {
         if (pill) { pill.textContent = '● CONFIG NEEDED'; pill.style.color = '#f87171'; }
-        $('config-warning-banner').classList.remove('hidden');
+        if (warn) warn.classList.remove('hidden');
         setP2PStatus('offline', 'Config Needed');
         return;
       }
 
       try {
-        fbApp = initializeApp(firebaseConfig);
+        fbApp = initializeApp(_activeFirebaseConfig);
         auth = getAuth(fbApp);
         db = getFirestore(fbApp);
 
-        // RULE 3: Authenticate BEFORE any Firestore queries
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -1639,11 +1629,15 @@
         state.fbUser = auth.currentUser;
         state.fbReady = true;
         if (pill) { pill.textContent = '● CLOUD READY'; pill.style.color = '#34d399'; }
+        if (warn) warn.classList.add('hidden');
       } catch (err) {
         console.error('Firebase init failed:', err);
         if (pill) { pill.textContent = '● AUTH ERROR'; pill.style.color = '#f87171'; }
+        if (warn) {
+          warn.textContent = 'Firebase error: ' + (err && err.message ? err.message : 'Enable Anonymous Sign-In in Firebase Console.');
+          warn.classList.remove('hidden');
+        }
         setP2PStatus('offline', 'Offline');
-        toast('Enable Anonymous Sign-In in Firebase Console', 'error');
       }
     }
 
@@ -1679,7 +1673,6 @@
         if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
       }, 15000);
 
-      // 1. Profiles (live presence, names & avatars)
       state.unsubs.push(onSnapshot(pubCol('profiles'), (snap) => {
         const map = {};
         snap.forEach((d) => {
@@ -1689,6 +1682,7 @@
         state.allProfiles = map;
         if (map[myId]) {
           state.myProfile = { ...state.myProfile, ...map[myId] };
+          saveRememberedProfile(state.myProfile);
           renderProfile();
         }
         renderContacts();
@@ -1700,7 +1694,6 @@
         }
       }, (err) => console.warn('profiles listener:', err)));
 
-      // 2. Friendships
       state.unsubs.push(onSnapshot(pubCol('friendships'), (snap) => {
         const set = new Set();
         snap.forEach((d) => {
@@ -1714,7 +1707,6 @@
         renderContacts();
       }, (err) => console.warn('friendships listener:', err)));
 
-      // 3. Custom Contact Meta (per-user nicknames & custom photos)
       state.unsubs.push(onSnapshot(pubCol('contactMeta'), (snap) => {
         const map = {};
         snap.forEach((d) => {
@@ -1732,7 +1724,6 @@
         }
       }, (err) => console.warn('contactMeta listener:', err)));
 
-      // 4. Friend Requests (works offline & across devices)
       state.unsubs.push(onSnapshot(pubCol('requests'), (snap) => {
         const inc = [];
         const snt = [];
@@ -1749,7 +1740,6 @@
         renderRequests();
       }, (err) => console.warn('requests listener:', err)));
 
-      // 5. Messages (real-time + offline + multi-device)
       state.unsubs.push(onSnapshot(pubCol('messages'), (snap) => {
         const byPeer = {};
         snap.forEach((d) => {
@@ -1774,7 +1764,6 @@
         renderContacts();
       }, (err) => console.warn('messages listener:', err)));
 
-      // 6. Typing Indicators
       state.unsubs.push(onSnapshot(pubCol('typing'), (snap) => {
         const map = {};
         snap.forEach((d) => {
@@ -1785,7 +1774,6 @@
         if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
       }, (err) => console.warn('typing listener:', err)));
 
-      // 7. Call History
       state.unsubs.push(onSnapshot(pubCol('callLogs'), (snap) => {
         const logs = [];
         snap.forEach((d) => {
@@ -1797,7 +1785,6 @@
         renderCalls();
       }, (err) => console.warn('callLogs listener:', err)));
 
-      // 8. Live Calls Signaling
       state.unsubs.push(onSnapshot(pubCol('calls'), (snap) => {
         snap.forEach((d) => {
           const c = d.data();
@@ -1806,7 +1793,6 @@
         });
       }, (err) => console.warn('calls listener:', err)));
 
-      // 9. ICE Candidates Signaling
       state.unsubs.push(onSnapshot(pubCol('ice'), (snap) => {
         if (!state.call.callId || state.call.status === 'IDLE') return;
         snap.forEach((d) => {
@@ -1841,6 +1827,7 @@
       await setPresence(false);
       stopFirestoreListeners();
       clearTimeout(state.idleTimer);
+      saveRememberedProfile(null);
       state.myProfile = null;
       state.friendIds = new Set();
       state.contactMeta = {};
@@ -1915,6 +1902,7 @@
       state.isLocked = false;
       state.enteredPin = '';
       updatePinDots();
+      saveRememberedProfile(state.myProfile);
       $('auth-screen').classList.remove('open');
       $('lock-screen').classList.remove('open');
       renderAll();
@@ -2022,7 +2010,6 @@
           return;
         }
 
-        // Mutual request check -> auto-accept!
         const reverseReqId = targetId + '__' + myId;
         const reverseSnap = await getDoc(pubDoc('requests', reverseReqId));
         if (reverseSnap.exists() && reverseSnap.data().status === 'pending') {
@@ -2043,7 +2030,7 @@
           status: 'pending',
           ts: Date.now()
         });
-        toast('Friend request sent to ' + targetId + ' (delivers even offline!)', 'success');
+        toast('Friend request sent to ' + targetId, 'success');
       } catch (err) {
         toast('Could not send request', 'error');
       }
@@ -2115,7 +2102,7 @@
       }
     }
 
-    /* ---------- 10. VOICE NOTE RECORDER (LOW-BITRATE FOR SPARK) ---------- */
+    /* ---------- 10. VOICE NOTE RECORDER ---------- */
     async function startVoiceRecording() {
       if (!state.activeChatId) return;
       try {
@@ -2386,7 +2373,6 @@
       if (!state.myProfile) return;
       const myId = state.myProfile.id;
 
-      // Incoming call for me
       if (c.calleeId === myId && c.status === 'ringing') {
         if (Date.now() - (c.createdAt || 0) > 45000) return;
         if (state.call.callId === c.callId) return;
@@ -2407,7 +2393,6 @@
         return;
       }
 
-      // Updates for my current call
       if (state.call.callId !== c.callId || state.call.status === 'IDLE') return;
 
       if (c.status === 'connected' && c.answer && state.call.status === 'OUTGOING_RINGING' && state.call.pc) {
@@ -2861,9 +2846,8 @@
     });
 
     /* ---------- 15. BOOTSTRAP & EVENT WIRING ---------- */
-    document.addEventListener('DOMContentLoaded', async () => {
+    async function bootApp() {
       initPWA();
-      showAuthScreen();
 
       if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
         if ($('btn-header-install')) $('btn-header-install').classList.add('hidden');
@@ -2873,7 +2857,13 @@
         document.addEventListener(ev, resetIdle, { passive: true });
       });
 
-      await initFirebase();
+      const remembered = loadRememberedProfile();
+      if (remembered && remembered.id && remembered.pinHash) {
+        state.myProfile = remembered;
+        showLockScreen('Enter your 4-digit personal PIN');
+      } else {
+        showAuthScreen();
+      }
 
       // Photo Picker (Avatar)
       on('photo-picker', 'change', async (e) => {
@@ -2887,6 +2877,7 @@
             toast('Photo ready!', 'success');
           } else if (state.photoTarget === 'own' && state.myProfile && db && state.fbUser) {
             state.myProfile.avatar = b64;
+            saveRememberedProfile(state.myProfile);
             await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: b64 });
             renderProfile();
             toast('Your photo updated!', 'success');
@@ -2898,7 +2889,7 @@
         } catch (err) { toast('Could not load image', 'error'); }
       });
 
-      // Chat Media Pickers (Spark Free)
+      // Chat Media Pickers
       on('media-photo-picker', 'change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if (file && state.activeChatId) {
@@ -3112,6 +3103,7 @@
       on('btn-own-photo-remove', 'click', async () => {
         if (!state.myProfile || !db || !state.fbUser) return;
         state.myProfile.avatar = null;
+        saveRememberedProfile(state.myProfile);
         await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: null });
         renderProfile();
         toast('Photo removed', 'info');
@@ -3124,6 +3116,7 @@
         const n = $('input-edit-name').value.trim();
         if (!n || !state.myProfile || !db || !state.fbUser) return;
         state.myProfile.name = n;
+        saveRememberedProfile(state.myProfile);
         await updateDoc(pubDoc('profiles', state.myProfile.id), { name: n });
         renderProfile();
         toast('Name saved!', 'success');
@@ -3133,6 +3126,7 @@
         const p = $('input-edit-pin').value.trim();
         if (!/^\d{4}$/.test(p) || !state.myProfile || !db || !state.fbUser) { toast('PIN must be 4 digits', 'error'); return; }
         state.myProfile.pinHash = hashPin(p);
+        saveRememberedProfile(state.myProfile);
         await updateDoc(pubDoc('profiles', state.myProfile.id), { pinHash: state.myProfile.pinHash });
         $('input-edit-pin').value = '';
         toast('PIN updated!', 'success');
@@ -3200,7 +3194,15 @@
           $('input-incall-msg').value = '';
         }
       });
-    });
+
+      await initFirebase();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
+    } else {
+      bootApp();
+    }
   </script>
 </body>
 </html>
