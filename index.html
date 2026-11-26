@@ -822,13 +822,20 @@
 
         <div class="glass panel-card">
           <div>
-            <div style="font-size:13px;font-weight:700;color:#fff;">PWA App Icons (Remove Chrome Badge)</div>
-            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.45;">Download both PNG icons and upload them to your GitHub repo root alongside <span class="mono" style="color:#38bdf8;">manifest.json</span> and <span class="mono" style="color:#38bdf8;">sw.js</span>.</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;">Custom TURN Relay (Optional)</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.45;">Built-in OpenRelay TURN is active by default. Paste your own free Metered.ca TURN credentials below if needed.</div>
           </div>
-          <div class="grid-2">
-            <button type="button" id="btn-dl-icon-192" class="btn btn-ghost" style="padding:9px;color:#38bdf8;">Download icon-192.png</button>
-            <button type="button" id="btn-dl-icon-512" class="btn btn-ghost" style="padding:9px;color:#38bdf8;">Download icon-512.png</button>
-          </div>
+          <form id="form-turn-cfg" style="display:flex;flex-direction:column;gap:8px;">
+            <input id="input-turn-url" type="text" placeholder="turn:a.relay.metered.ca:443?transport=tcp" class="hud-input mono" style="font-size:11px;" />
+            <div class="grid-2">
+              <input id="input-turn-user" type="text" placeholder="Username" class="hud-input mono" style="font-size:11px;" />
+              <input id="input-turn-pass" type="password" placeholder="Credential" class="hud-input mono" style="font-size:11px;" />
+            </div>
+            <div class="grid-2">
+              <button type="submit" class="btn btn-cyan" style="padding:9px;">Save &amp; Reconnect</button>
+              <button type="button" id="btn-turn-clear" class="btn btn-ghost" style="padding:9px;color:#f87171;">Use Default</button>
+            </div>
+          </form>
         </div>
 
         <div class="glass panel-card">
@@ -1496,6 +1503,7 @@
         messages: {},
         callHistory: [],
         ringtoneEnabled: true,
+        customTurn: { url: '', username: '', credential: '' },
 
         setupTempAvatar: null,
         photoTarget: null,
@@ -1514,6 +1522,7 @@
         peer: null,
         peerStatus: 'connecting',
         conns: {},
+        pendingConns: {},
         packetQueue: {},
         pingTimer: null,
         reconnectTimer: null,
@@ -1568,6 +1577,7 @@
         state.messages = {};
         state.callHistory = [];
         state.ringtoneEnabled = true;
+        state.customTurn = { url: '', username: '', credential: '' };
         state.activeChatId = null;
         state.incomingMedia = {};
       }
@@ -1601,6 +1611,13 @@
             state.callHistory = d.calls.filter((c) => c && !PURGE_IDS.has(cleanId(c.peerId)));
           }
           if (typeof d.ringtoneEnabled === 'boolean') state.ringtoneEnabled = d.ringtoneEnabled;
+          if (d.customTurn && typeof d.customTurn === 'object') {
+            state.customTurn = {
+              url: String(d.customTurn.url || '').trim(),
+              username: String(d.customTurn.username || '').trim(),
+              credential: String(d.customTurn.credential || '').trim()
+            };
+          }
         } catch (e) {}
       }
 
@@ -1615,7 +1632,8 @@
             requests: state.incomingRequests,
             sentRequests: state.sentRequests,
             calls: state.callHistory.slice(0, 50),
-            ringtoneEnabled: state.ringtoneEnabled
+            ringtoneEnabled: state.ringtoneEnabled,
+            customTurn: state.customTurn
           };
           localStorage.setItem(DATA_PREFIX + state.myProfile.id, JSON.stringify(payload));
         } catch (e) {}
@@ -1895,11 +1913,38 @@
         clearReconnectTimer();
         clearInterval(state.pingTimer);
         state.pingTimer = null;
+        Object.keys(state.pendingConns).forEach((k) => {
+          const p = state.pendingConns[k];
+          if (p) {
+            clearTimeout(p.timeoutId);
+            try { if (p.conn) p.conn.close(); } catch (e) {}
+          }
+        });
+        state.pendingConns = {};
         if (state.peer) {
           try { state.peer.destroy(); } catch (e) {}
           state.peer = null;
         }
         state.conns = {};
+      }
+
+      function getIceServers() {
+        const servers = [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun.relay.metered.ca:80' },
+          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turns:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+        ];
+        if (state.customTurn && state.customTurn.url) {
+          const custom = { urls: state.customTurn.url };
+          if (state.customTurn.username) custom.username = state.customTurn.username;
+          if (state.customTurn.credential) custom.credential = state.customTurn.credential;
+          servers.unshift(custom);
+        }
+        return servers;
       }
 
       function showDuplicateModal() {
@@ -1929,60 +1974,98 @@
           setP2PStatus('connecting', 'Connecting...');
 
           const peer = new window.Peer(toPeerId(state.myProfile.id), {
-            debug: 0,
+            debug: 1,
             config: {
-              iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-              ]
+              iceServers: getIceServers(),
+              iceCandidatePoolSize: 10
             }
           });
           state.peer = peer;
 
           peer.on('open', () => {
             if (state.peer !== peer) return;
-            state.duplicateBlocked = false;
             clearReconnectTimer();
-            $('dup-modal').classList.remove('open');
+            state.duplicateBlocked = false;
             setP2PStatus('online', 'Online');
+            $('dup-modal').classList.remove('open');
             syncAllPeers();
+            clearInterval(state.pingTimer);
+            state.pingTimer = setInterval(syncAllPeers, 25000);
           });
-          peer.on('connection', bindDataConn);
-          peer.on('call', onIncomingMediaCall);
+
+          peer.on('connection', (conn) => {
+            if (state.peer !== peer) return;
+            bindDataConn(conn);
+          });
+
+          peer.on('call', (mc) => {
+            if (state.peer !== peer) return;
+            onIncomingMediaCall(mc);
+          });
+
           peer.on('disconnected', () => {
             if (state.peer !== peer || state.duplicateBlocked) return;
             setP2PStatus('connecting', 'Reconnecting...');
-            scheduleReconnect();
+            try {
+              if (!peer.destroyed) peer.reconnect();
+            } catch (e) {
+              scheduleReconnect();
+            }
           });
+
           peer.on('close', () => {
-            if (state.peer !== peer || state.duplicateBlocked) return;
-            setP2PStatus('offline', 'Offline');
-            scheduleReconnect();
+            if (state.peer !== peer) return;
+            if (!state.duplicateBlocked) {
+              setP2PStatus('offline', 'Offline');
+              scheduleReconnect();
+            }
           });
+
           peer.on('error', (err) => {
             if (state.peer !== peer) return;
-            if (err && err.type === 'unavailable-id') {
+            const errType = err && err.type;
+
+            if (errType === 'unavailable-id') {
               state.duplicateBlocked = true;
               clearReconnectTimer();
-              try { peer.destroy(); } catch (e) {}
-              state.peer = null;
               setP2PStatus('duplicate', 'ID In Use');
               showDuplicateModal();
               return;
             }
-            if (err && err.type === 'peer-unavailable') {
-              toast('User is currently offline', 'error');
+
+            if (errType === 'peer-unavailable') {
+              const msg = String((err && err.message) || '');
+              const match = msg.match(/famcall-hud-p2p-([a-z0-9-]+)/i);
+              const missedId = match ? cleanId(match[1]) : null;
+              if (missedId) {
+                clearPendingConn(missedId);
+                const sentItem = state.sentRequests.find((s) => s.id === missedId && s.status === 'sending');
+                if (sentItem) {
+                  sentItem.status = 'pending';
+                  saveAccountData();
+                  renderRequests();
+                }
+                toast(missedId + ' is currently offline', 'error');
+              } else {
+                toast('Target Family ID is currently offline', 'error');
+              }
               return;
             }
+
             setP2PStatus('offline', 'Offline');
             scheduleReconnect();
           });
-
-          clearInterval(state.pingTimer);
-          state.pingTimer = setInterval(syncAllPeers, 25000);
         } catch (e) {
           setP2PStatus('offline', 'Offline');
           scheduleReconnect();
+        }
+      }
+
+      function clearPendingConn(remoteId) {
+        const p = state.pendingConns[remoteId];
+        if (p) {
+          clearTimeout(p.timeoutId);
+          delete state.pendingConns[remoteId];
         }
       }
 
@@ -1992,7 +2075,10 @@
             ? cleanId(conn.metadata.fromId)
             : fromPeerId(conn.peer);
 
+          if (!conn._createdAt) conn._createdAt = Date.now();
+
           const onOpen = () => {
+            clearPendingConn(remoteId);
             state.conns[remoteId] = conn;
             if (state.contacts[remoteId]) {
               state.contacts[remoteId].online = true;
@@ -2018,7 +2104,16 @@
             if (pkt && typeof pkt === 'object') handlePeerPacket(remoteId, pkt);
           });
 
+          conn.on('error', () => {
+            if (state.pendingConns[remoteId] && state.pendingConns[remoteId].conn === conn) {
+              clearPendingConn(remoteId);
+            }
+          });
+
           conn.on('close', () => {
+            if (state.pendingConns[remoteId] && state.pendingConns[remoteId].conn === conn) {
+              clearPendingConn(remoteId);
+            }
             if (state.conns[remoteId] === conn) delete state.conns[remoteId];
             if (state.contacts[remoteId]) {
               state.contacts[remoteId].online = false;
@@ -2036,23 +2131,68 @@
         copy.forEach((pkt) => { try { conn.send(pkt); } catch (e) {} });
       }
 
-      function sendPeerPacket(targetIdRaw, packet) {
-        const targetId = cleanId(targetIdRaw);
+      function sendPeerPacket(targetIdRaw, packet, forceFresh) {
+        const targetId = cleanId(String(targetIdRaw || '').replace(/\s+/g, ''));
         if (!targetId || !state.myProfile) return;
+
         const existing = state.conns[targetId];
-        if (existing && existing.open) {
+        if (!forceFresh && existing && existing.open) {
           try { existing.send(packet); return; } catch (e) {}
         }
+
         if (!state.packetQueue[targetId]) state.packetQueue[targetId] = [];
         state.packetQueue[targetId].push(packet);
-        if (!state.peer || !state.peer.open) return;
+
+        if (!state.peer || !state.peer.open) {
+          toast('You are offline — tap status pill to reconnect', 'error');
+          return;
+        }
+
+        const pending = state.pendingConns[targetId];
+        const now = Date.now();
+
+        // Tear down stale unopened connection (> 8s) or when forceFresh is requested
+        if (existing && !existing.open && (forceFresh || (now - (existing._createdAt || 0) > 8000))) {
+          try { existing.close(); } catch (e) {}
+          delete state.conns[targetId];
+        }
+        if (pending) {
+          const isStale = (now - pending.createdAt) > 8000;
+          if (!forceFresh && !isStale && pending.conn && !pending.conn.open) {
+            return; // Handshake already in flight
+          }
+          clearPendingConn(targetId);
+          try { if (pending.conn) pending.conn.close(); } catch (e) {}
+        }
+
         try {
           const conn = state.peer.connect(toPeerId(targetId), {
             reliable: true,
+            serialization: 'json',
             metadata: { fromId: state.myProfile.id, fromName: state.myProfile.name }
           });
+          conn._createdAt = now;
+
+          const timeoutId = setTimeout(() => {
+            if (!conn.open) {
+              clearPendingConn(targetId);
+              if (state.conns[targetId] === conn) delete state.conns[targetId];
+              try { conn.close(); } catch (e) {}
+              const sentItem = state.sentRequests.find((s) => s.id === targetId && s.status === 'sending');
+              if (sentItem) {
+                sentItem.status = 'pending';
+                saveAccountData();
+                renderRequests();
+              }
+              toast('Connection timed out — tap Resend or check network', 'error');
+            }
+          }, 10000);
+
+          state.pendingConns[targetId] = { conn, createdAt: now, timeoutId };
           bindDataConn(conn);
-        } catch (e) {}
+        } catch (e) {
+          toast('Could not connect to ' + targetId, 'error');
+        }
       }
 
       function syncAllPeers() {
@@ -2351,11 +2491,34 @@
               sendPeerPacket(fromId, { type: 'FRIEND_ACCEPT', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null });
               return;
             }
+            // Mutual Request Auto-Accept
+            if (state.sentRequests.some((s) => s.id === fromId)) {
+              state.sentRequests = state.sentRequests.filter((s) => s.id !== fromId);
+              state.incomingRequests = state.incomingRequests.filter((r) => r.fromId !== fromId);
+              const c = upsertContact(fromId, pkt.fromName || fromId, pkt.fromAvatar || null, true);
+              sendPeerPacket(fromId, { type: 'FRIEND_ACCEPT', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null });
+              saveAccountData();
+              renderAll();
+              toast('Mutual request! Connected with ' + (c ? c.name : fromId), 'success');
+              return;
+            }
             if (!state.incomingRequests.some((r) => r.fromId === fromId)) {
               state.incomingRequests.unshift({ fromId, fromName: pkt.fromName || fromId, fromAvatar: pkt.fromAvatar || null, timestamp: Date.now() });
               saveAccountData();
               renderRequests();
               toast('Friend Request from ' + (pkt.fromName || fromId), 'success');
+            }
+            sendPeerPacket(fromId, { type: 'FRIEND_REQUEST_ACK', fromId: state.myProfile.id, fromName: state.myProfile.name });
+            break;
+          }
+
+          case 'FRIEND_REQUEST_ACK': {
+            const sent = state.sentRequests.find((s) => s.id === fromId);
+            if (sent) {
+              sent.status = 'delivered';
+              saveAccountData();
+              renderRequests();
+              toast('Friend request delivered to ' + (pkt.fromName || fromId), 'success');
             }
             break;
           }
@@ -2800,6 +2963,9 @@
         $('req-own-id').textContent = state.myProfile.id;
         $('btn-toggle-ring').textContent = state.ringtoneEnabled ? 'ON' : 'OFF';
         $('btn-toggle-ring').className = 'btn ' + (state.ringtoneEnabled ? 'btn-cyan' : 'btn-ghost');
+        if ($('input-turn-url')) $('input-turn-url').value = (state.customTurn && state.customTurn.url) || '';
+        if ($('input-turn-user')) $('input-turn-user').value = (state.customTurn && state.customTurn.username) || '';
+        if ($('input-turn-pass')) $('input-turn-pass').value = (state.customTurn && state.customTurn.credential) || '';
       }
 
       function renderContacts() {
@@ -3020,10 +3186,22 @@
 
         snt.innerHTML = state.sentRequests.length === 0 ? '<div class="glass empty-state" style="padding:14px;">No pending sent requests</div>' : '';
         state.sentRequests.forEach((s) => {
+          const st = s.status || 'pending';
+          const badgeText = st === 'delivered' ? 'DELIVERED' : st === 'sending' ? 'SENDING...' : 'PENDING';
+          const badgeColor = st === 'delivered' ? '#34d399' : st === 'sending' ? '#f59e0b' : '#94a3b8';
           const el = document.createElement('div');
           el.className = 'glass row-between';
-          el.style.cssText = 'border-radius:12px;padding:10px 14px;';
-          el.innerHTML = `<span class="mono" style="font-size:12px;font-weight:700;color:#7dd3fc;">${esc(s.id)}</span><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;">PENDING</span>`;
+          el.style.cssText = 'border-radius:14px;padding:10px 12px;gap:8px;';
+          el.innerHTML = `
+            <div style="min-width:0;display:flex;flex-direction:column;gap:3px;">
+              <span class="mono" style="font-size:12px;font-weight:700;color:#7dd3fc;">${esc(s.id)}</span>
+              <span class="mono" style="font-size:10px;font-weight:700;color:${badgeColor};">${badgeText}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button type="button" data-resend-req="${esc(s.id)}" class="btn btn-cyan" style="padding:6px 11px;font-size:11px;">Resend</button>
+              <button type="button" data-cancel-req="${esc(s.id)}" class="btn btn-ghost" style="padding:6px 10px;font-size:11px;color:#f87171;">Cancel</button>
+            </div>
+          `;
           snt.appendChild(el);
         });
       }
@@ -3341,17 +3519,62 @@
         });
         on('form-send-req', 'submit', (e) => {
           e.preventDefault();
-          const targetId = cleanId($('input-friend-id').value);
+          const targetId = cleanId(($('input-friend-id').value || '').replace(/\s+/g, ''));
           if (!targetId || targetId === state.myProfile.id) { toast('Enter a valid Family ID', 'error'); return; }
           if (state.contacts[targetId]) { toast('Already in contacts', 'info'); return; }
-          if (!state.sentRequests.some((s) => s.id === targetId)) {
-            state.sentRequests.unshift({ id: targetId, timestamp: Date.now() });
+
+          // Mutual Request Auto-Accept if they already sent us a request
+          const existingIncoming = state.incomingRequests.find((r) => r.fromId === targetId);
+          if (existingIncoming) {
+            state.incomingRequests = state.incomingRequests.filter((r) => r.fromId !== targetId);
+            state.sentRequests = state.sentRequests.filter((s) => s.id !== targetId);
+            upsertContact(existingIncoming.fromId, existingIncoming.fromName, existingIncoming.fromAvatar || null, true);
+            sendPeerPacket(targetId, { type: 'FRIEND_ACCEPT', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null }, true);
+            saveAccountData();
+            renderAll();
+            toast('Mutual request! Connected with ' + existingIncoming.fromName, 'success');
+            $('input-friend-id').value = '';
+            return;
+          }
+
+          const existingSent = state.sentRequests.find((s) => s.id === targetId);
+          if (existingSent) {
+            existingSent.status = 'sending';
+            existingSent.timestamp = Date.now();
+          } else {
+            state.sentRequests.unshift({ id: targetId, status: 'sending', timestamp: Date.now() });
+          }
+          saveAccountData();
+          renderRequests();
+          sendPeerPacket(targetId, { type: 'FRIEND_REQUEST', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null }, true);
+          toast('Sending request to ' + targetId + '...', 'info');
+          $('input-friend-id').value = '';
+        });
+
+        on('sent-list', 'click', (e) => {
+          const resendBtn = e.target.closest('[data-resend-req]');
+          if (resendBtn) {
+            const targetId = cleanId(resendBtn.dataset.resendReq);
+            const item = state.sentRequests.find((s) => s.id === targetId);
+            if (item) {
+              item.status = 'sending';
+              item.timestamp = Date.now();
+              saveAccountData();
+              renderRequests();
+            }
+            sendPeerPacket(targetId, { type: 'FRIEND_REQUEST', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null }, true);
+            toast('Resending request to ' + targetId + '...', 'info');
+            return;
+          }
+          const cancelBtn = e.target.closest('[data-cancel-req]');
+          if (cancelBtn) {
+            const targetId = cleanId(cancelBtn.dataset.cancelReq);
+            clearPendingConn(targetId);
+            state.sentRequests = state.sentRequests.filter((s) => s.id !== targetId);
             saveAccountData();
             renderRequests();
+            toast('Request to ' + targetId + ' cancelled', 'info');
           }
-          sendPeerPacket(targetId, { type: 'FRIEND_REQUEST', fromId: state.myProfile.id, fromName: state.myProfile.name, fromAvatar: state.myProfile.avatar || null });
-          toast('Request sent to ' + targetId, 'success');
-          $('input-friend-id').value = '';
         });
         on('incoming-list', 'click', (e) => {
           const acc = e.target.closest('[data-accept]');
@@ -3415,6 +3638,24 @@
           toast('PIN updated!', 'success');
         });
         on('btn-toggle-ring', 'click', () => { state.ringtoneEnabled = !state.ringtoneEnabled; saveAccountData(); renderProfile(); });
+        on('form-turn-cfg', 'submit', (e) => {
+          e.preventDefault();
+          state.customTurn = {
+            url: ($('input-turn-url').value || '').trim(),
+            username: ($('input-turn-user').value || '').trim(),
+            credential: ($('input-turn-pass').value || '').trim()
+          };
+          saveAccountData();
+          toast('TURN relay saved — reconnecting...', 'success');
+          initPeer(true);
+        });
+        on('btn-turn-clear', 'click', () => {
+          state.customTurn = { url: '', username: '', credential: '' };
+          saveAccountData();
+          renderProfile();
+          toast('Reset to default OpenRelay TURN', 'info');
+          initPeer(true);
+        });
         on('btn-open-reset', 'click', () => openDeleteAccountModal(state.myProfile && state.myProfile.id));
 
         // Modals
