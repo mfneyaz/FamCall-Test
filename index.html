@@ -839,7 +839,8 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: calc(20px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+      padding: calc(18px + var(--safe-top)) 14px calc(22px + var(--safe-bottom));
+      overflow: hidden;
     }
     #remote-video {
       position: absolute;
@@ -850,18 +851,34 @@
       background: #000;
       z-index: 1;
     }
+    .call-video-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: linear-gradient(180deg, rgba(4, 8, 20, 0.62) 0%, rgba(4, 8, 20, 0) 26%, rgba(4, 8, 20, 0) 70%, rgba(4, 8, 20, 0.78) 100%);
+    }
     #local-video {
       position: absolute;
       top: calc(18px + var(--safe-top));
-      right: 16px;
-      width: 108px;
-      height: 150px;
+      right: 14px;
+      width: 100px;
+      height: 140px;
       border-radius: 16px;
       object-fit: cover;
-      border: 2px solid rgba(56, 189, 248, 0.65);
-      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.65);
-      z-index: 4;
+      border: 1.5px solid rgba(56, 189, 248, 0.68);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.68), 0 0 14px rgba(56, 189, 248, 0.22);
+      z-index: 8;
       background: #091326;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    #local-video.dragging {
+      cursor: grabbing;
+      border-color: #7dd3fc;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.78), 0 0 22px rgba(56, 189, 248, 0.55);
     }
     .call-hud-layer {
       position: relative;
@@ -870,34 +887,115 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 10px;
-      margin-top: 24px;
+      gap: 8px;
+      margin-top: 22px;
+      pointer-events: none;
+    }
+    #call-overlay.video-connected .call-hud-layer {
+      margin-top: 6px;
+      gap: 4px;
+    }
+    #call-overlay.video-connected #call-peer-avatar {
+      display: none !important;
+    }
+    #call-overlay.video-connected #call-peer-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #cbd5e1;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+    }
+    #call-overlay.video-connected #call-status-text,
+    #call-overlay.video-connected #call-timer,
+    #call-overlay.video-connected #call-e2ee-note {
+      color: #94a3b8 !important;
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.85);
+    }
+    .call-bt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: rgba(11, 20, 38, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #93c5fd;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      margin-top: 2px;
+    }
+    #call-overlay.video-connected .call-bt-badge {
+      color: #cbd5e1;
+      border-color: rgba(148, 163, 184, 0.38);
+      background: rgba(15, 23, 42, 0.72);
     }
     .call-controls {
       position: relative;
-      z-index: 5;
+      z-index: 6;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      gap: 14px;
+      gap: 10px;
       flex-wrap: wrap;
+      padding: 12px 10px;
+      border-radius: 24px;
+      background: rgba(7, 15, 30, 0.78);
+      backdrop-filter: blur(14px) saturate(135%);
+      -webkit-backdrop-filter: blur(14px) saturate(135%);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 32px rgba(0, 0, 0, 0.55);
+      width: min(100%, 440px);
+      margin: 0 auto;
+    }
+    .call-ctrl-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      min-width: 54px;
+    }
+    .call-ctrl-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.02em;
     }
     .call-btn {
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      background: rgba(15, 23, 42, 0.84);
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      background: linear-gradient(180deg, rgba(15, 28, 52, 0.92), rgba(7, 15, 30, 0.96));
+      color: #e2e8f0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 18px rgba(0, 0, 0, 0.45);
+      transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     }
-    .call-btn.active { background: rgba(56, 189, 248, 0.35); border-color: #38bdf8; }
-    .call-btn.accept { background: #10b981; border-color: #6ee7b7; width: 64px; height: 64px; }
-    .call-btn.hangup { background: #f43f5e; border-color: #fda4af; width: 64px; height: 64px; }
+    .call-btn:active { transform: scale(0.92); }
+    .call-btn.active {
+      background: linear-gradient(180deg, rgba(14, 74, 120, 0.95), rgba(7, 36, 68, 0.98));
+      border-color: rgba(56, 189, 248, 0.8);
+      color: #7dd3fc;
+      box-shadow: inset 0 1px 0 rgba(186, 230, 253, 0.35), 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+    .call-btn.accept {
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.95), rgba(5, 122, 85, 0.98));
+      border-color: rgba(110, 231, 183, 0.85);
+      color: #ecfdf5;
+      width: 56px;
+      height: 56px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
+    }
+    .call-btn.hangup {
+      background: linear-gradient(180deg, rgba(244, 63, 94, 0.95), rgba(159, 18, 57, 0.98));
+      border-color: rgba(253, 164, 175, 0.8);
+      color: #fff1f2;
+      width: 56px;
+      height: 56px;
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.45);
+    }
 
     /* Modals & Lightbox */
     .modal-backdrop {
@@ -1274,23 +1372,73 @@
   <!-- ==================== 5. CALL OVERLAY ==================== -->
   <section id="call-overlay" class="hidden">
     <video id="remote-video" autoplay playsinline class="hidden"></video>
-    <video id="local-video" autoplay playsinline muted class="hidden"></video>
+    <div id="call-video-vignette" class="call-video-vignette hidden"></div>
+    <video id="local-video" autoplay playsinline muted class="hidden" title="Drag to move"></video>
     <audio id="remote-audio" autoplay playsinline></audio>
 
     <div class="call-hud-layer">
       <div id="call-peer-avatar" class="avatar" style="width:92px;height:92px;font-size:32px;">FC</div>
       <div id="call-peer-name" style="font-size:23px;font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,0.8);">Contact</div>
       <div id="call-status-text" style="font-size:13.5px;font-weight:700;color:#7dd3fc;">Calling...</div>
-      <div id="call-timer" class="mono hidden" style="font-size:15px;font-weight:800;color:#34d399;">00:00</div>
-      <div style="font-size:11px;color:#94a3b8;">🔒 End-to-End Encrypted WebRTC</div>
+      <div id="call-timer" class="mono hidden" style="font-size:14.5px;font-weight:800;color:#34d399;">00:00</div>
+      <div id="call-bt-badge" class="call-bt-badge hidden">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+        <span id="call-bt-name">Bluetooth Audio</span>
+      </div>
+      <div id="call-e2ee-note" style="font-size:11px;color:#94a3b8;">🔒 End-to-End Encrypted</div>
     </div>
 
     <div class="call-controls">
-      <button id="btn-call-accept" type="button" class="call-btn accept hidden" title="Accept">📞</button>
-      <button id="btn-call-mute" type="button" class="call-btn" title="Mute Mic">🎤</button>
-      <button id="btn-call-cam" type="button" class="call-btn hidden" title="Toggle Camera">📹</button>
-      <button id="btn-call-flip" type="button" class="call-btn hidden" title="Flip Camera">🔄</button>
-      <button id="btn-call-hangup" type="button" class="call-btn hangup" title="End Call">✕</button>
+      <!-- Accept (Incoming) -->
+      <div id="ctrl-wrap-accept" class="call-ctrl-item hidden">
+        <button id="btn-call-accept" type="button" class="call-btn accept" title="Accept Call">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <span class="call-ctrl-label">Accept</span>
+      </div>
+
+      <!-- Mute Mic -->
+      <div class="call-ctrl-item">
+        <button id="btn-call-mute" type="button" class="call-btn" title="Mute Mic">
+          <svg id="icon-mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg id="icon-mic-off" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <span id="lbl-call-mute" class="call-ctrl-label">Mute</span>
+      </div>
+
+      <!-- Speaker Toggle -->
+      <div class="call-ctrl-item">
+        <button id="btn-call-speaker" type="button" class="call-btn" title="Speaker">
+          <svg id="icon-spk-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg id="icon-spk-off" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        </button>
+        <span id="lbl-call-speaker" class="call-ctrl-label">Speaker</span>
+      </div>
+
+      <!-- Switch Audio <-> Video Call -->
+      <div id="ctrl-wrap-switch" class="call-ctrl-item hidden">
+        <button id="btn-call-switch-mode" type="button" class="call-btn" title="Switch Call Mode">
+          <svg id="icon-to-video" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2.5"/></svg>
+          <svg id="icon-to-audio" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <span id="lbl-call-switch" class="call-ctrl-label">Video</span>
+      </div>
+
+      <!-- Flip Camera (Video Call) -->
+      <div id="ctrl-wrap-flip" class="call-ctrl-item hidden">
+        <button id="btn-call-flip" type="button" class="call-btn" title="Flip Camera">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><path d="M9 13a3 3 0 0 1 5.12-2.12L15 12"/><path d="M15 15a3 3 0 0 1-5.12 2.12L9 16"/></svg>
+        </button>
+        <span class="call-ctrl-label">Flip</span>
+      </div>
+
+      <!-- Hang Up -->
+      <div class="call-ctrl-item">
+        <button id="btn-call-hangup" type="button" class="call-btn hangup" title="End Call">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 2.59 3.4z" transform="rotate(135 12 12)"/></svg>
+        </button>
+        <span class="call-ctrl-label" style="color:#fda4af;">End</span>
+      </div>
     </div>
   </section>
 
@@ -1742,8 +1890,12 @@
         pc: null,
         localStream: null,
         muted: false,
+        speakerOn: false,
+        btDeviceName: '',
         camOff: false,
         facingMode: 'user',
+        lastRenegSeq: 0,
+        pendingRenegSeq: 0,
         startTs: 0,
         timerId: null,
         ringTimeoutId: null,
@@ -2630,25 +2782,253 @@
       return servers;
     }
 
+    const BT_REGEX = /bluetooth|airpods|buds|earbuds|headset|hands-free|handsfree|bose|sony|jbl|beats|wireless|\bbt\b/i;
+
+    async function detectBluetoothAudio() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const btOut = devices.find((d) => d.kind === 'audiooutput' && BT_REGEX.test(d.label || ''));
+        const btIn = devices.find((d) => d.kind === 'audioinput' && BT_REGEX.test(d.label || ''));
+        const found = btOut || btIn;
+        state.call.btDeviceName = found ? (found.label.replace(/\s*\([^)]*\)\s*/g, '').trim() || 'Bluetooth Audio') : '';
+        if (state.call.status !== 'IDLE') updateCallUI();
+      } catch (e) {}
+    }
+
+    async function applyAudioOutput() {
+      const audioEl = $('remote-audio');
+      const videoEl = $('remote-video');
+      const c = state.call;
+      const vol = c.speakerOn ? 1.0 : 0.75;
+      if (audioEl) audioEl.volume = vol;
+      if (videoEl) videoEl.volume = vol;
+
+      if (audioEl && typeof audioEl.setSinkId === 'function' && navigator.mediaDevices?.enumerateDevices) {
+        try {
+          const outs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audiooutput');
+          let target = null;
+          if (!c.speakerOn) {
+            target = outs.find((d) => BT_REGEX.test(d.label || '')) || outs.find((d) => /earpiece|headphone|communications/i.test(d.label || ''));
+          } else {
+            target = outs.find((d) => /speaker/i.test(d.label || '')) || outs.find((d) => d.deviceId === 'default');
+          }
+          if (target && target.deviceId) {
+            await audioEl.setSinkId(target.deviceId).catch(() => {});
+          }
+        } catch (e) {}
+      }
+    }
+
+    function resetLocalVideoPos() {
+      const lv = $('local-video');
+      if (!lv) return;
+      lv.style.left = '';
+      lv.style.top = '';
+      lv.style.right = '14px';
+    }
+
+    function initDraggableLocalVideo() {
+      const lv = $('local-video');
+      if (!lv) return;
+      let dragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+
+      lv.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        lv.classList.add('dragging');
+        const rect = lv.getBoundingClientRect();
+        origLeft = rect.left;
+        origTop = rect.top;
+        startX = e.clientX;
+        startY = e.clientY;
+        lv.style.right = 'auto';
+        lv.style.left = origLeft + 'px';
+        lv.style.top = origTop + 'px';
+        try { lv.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+
+      lv.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const w = lv.offsetWidth || 100;
+        const h = lv.offsetHeight || 140;
+        const nx = Math.min(Math.max(10, origLeft + (e.clientX - startX)), window.innerWidth - w - 10);
+        const ny = Math.min(Math.max(10, origTop + (e.clientY - startY)), window.innerHeight - h - 106);
+        lv.style.left = nx + 'px';
+        lv.style.top = ny + 'px';
+      });
+
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        lv.classList.remove('dragging');
+        try { lv.releasePointerCapture(e.pointerId); } catch (err) {}
+      };
+      lv.addEventListener('pointerup', endDrag);
+      lv.addEventListener('pointercancel', endDrag);
+    }
+
     function updateCallUI() {
       const c = state.call;
+      const overlay = $('call-overlay');
       if (c.status === 'IDLE') {
-        $('call-overlay').classList.add('hidden');
+        overlay.classList.add('hidden');
+        overlay.classList.remove('video-connected');
         return;
       }
-      $('call-overlay').classList.remove('hidden');
+      overlay.classList.remove('hidden');
+      const isVideoConnected = c.isVideo && c.status === 'CONNECTED';
+      overlay.classList.toggle('video-connected', isVideoConnected);
+      $('call-video-vignette').classList.toggle('hidden', !isVideoConnected);
+
       const cv = getContactView(c.remoteId);
       setAvatar($('call-peer-avatar'), cv.avatar, cv.name);
       $('call-peer-name').textContent = cv.name;
-      $('btn-call-accept').classList.toggle('hidden', c.status !== 'RINGING');
-      $('btn-call-cam').classList.toggle('hidden', !c.isVideo);
-      $('btn-call-flip').classList.toggle('hidden', !c.isVideo);
+
+      // Controls visibility
+      $('ctrl-wrap-accept').classList.toggle('hidden', c.status !== 'RINGING');
+      $('ctrl-wrap-switch').classList.toggle('hidden', c.status !== 'CONNECTED');
+      $('ctrl-wrap-flip').classList.toggle('hidden', !c.isVideo || c.status === 'RINGING');
       $('call-timer').classList.toggle('hidden', c.status !== 'CONNECTED');
+
+      // Mute icon & state
       $('btn-call-mute').classList.toggle('active', c.muted);
-      $('btn-call-cam').classList.toggle('active', c.camOff);
+      $('icon-mic-on').classList.toggle('hidden', c.muted);
+      $('icon-mic-off').classList.toggle('hidden', !c.muted);
+      $('lbl-call-mute').textContent = c.muted ? 'Unmute' : 'Mute';
+
+      // Speaker icon & state
+      $('btn-call-speaker').classList.toggle('active', c.speakerOn);
+      $('icon-spk-on').classList.toggle('hidden', !c.speakerOn);
+      $('icon-spk-off').classList.toggle('hidden', c.speakerOn);
+      $('lbl-call-speaker').textContent = c.speakerOn ? 'Speaker' : 'Earpiece';
+
+      // Switch Audio <-> Video icon & label
+      $('icon-to-video').classList.toggle('hidden', c.isVideo);
+      $('icon-to-audio').classList.toggle('hidden', !c.isVideo);
+      $('lbl-call-switch').textContent = c.isVideo ? 'Audio' : 'Video';
+
+      // Bluetooth badge
+      const btBadge = $('call-bt-badge');
+      if (c.btDeviceName) {
+        $('call-bt-name').textContent = c.btDeviceName;
+        btBadge.classList.remove('hidden');
+      } else {
+        btBadge.classList.add('hidden');
+      }
+
+      // Status text
       if (c.status === 'CALLING') $('call-status-text').textContent = c.isVideo ? 'Video Calling...' : 'Calling...';
       else if (c.status === 'RINGING') $('call-status-text').textContent = c.isVideo ? 'Incoming Video Call' : 'Incoming Audio Call';
       else if (c.status === 'CONNECTED') $('call-status-text').textContent = 'Connected';
+    }
+
+    async function switchCallMode(toVideo) {
+      const c = state.call;
+      if (c.status !== 'CONNECTED' || !c.pc || !c.callId || !state.myProfile) return;
+      if (c.isVideo === toVideo) return;
+      try {
+        if (toVideo) {
+          const vs = await navigator.mediaDevices.getUserMedia({ video: { facingMode: c.facingMode } });
+          const vTrack = vs.getVideoTracks()[0];
+          if (!vTrack) throw new Error('No camera track');
+          c.localStream.getVideoTracks().forEach((t) => { t.stop(); c.localStream.removeTrack(t); });
+          c.localStream.addTrack(vTrack);
+          const vSender = c.pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+          if (vSender) await vSender.replaceTrack(vTrack);
+          else c.pc.addTrack(vTrack, c.localStream);
+
+          c.isVideo = true;
+          c.camOff = false;
+          c.speakerOn = true;
+          $('local-video').srcObject = c.localStream;
+          $('local-video').classList.remove('hidden');
+          if ($('remote-video').srcObject) $('remote-video').classList.remove('hidden');
+          applyAudioOutput();
+        } else {
+          c.localStream.getVideoTracks().forEach((t) => { t.stop(); c.localStream.removeTrack(t); });
+          const vSender = c.pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+          if (vSender) {
+            try { c.pc.removeTrack(vSender); } catch (e) { await vSender.replaceTrack(null).catch(() => {}); }
+          }
+          c.isVideo = false;
+          c.camOff = false;
+          $('local-video').srcObject = null;
+          $('local-video').classList.add('hidden');
+          $('remote-video').classList.add('hidden');
+        }
+
+        const seq = Date.now();
+        c.pendingRenegSeq = seq;
+        const offer = await c.pc.createOffer();
+        await c.pc.setLocalDescription(offer);
+        await updateDoc(pubDoc('calls', c.callId), {
+          isVideo: c.isVideo,
+          reneg: { seq, fromId: state.myProfile.id, type: 'offer', sdp: offer.sdp, mode: c.isVideo ? 'video' : 'audio' }
+        });
+        updateCallUI();
+        toast(c.isVideo ? 'Switched to Video Call' : 'Switched to Audio Call', 'info');
+      } catch (err) {
+        toast('Could not switch mode — check camera permission', 'error');
+      }
+    }
+
+    async function handleCallRenegotiation(reneg) {
+      const c = state.call;
+      if (!reneg || !c.pc || !state.myProfile || reneg.fromId === state.myProfile.id) return;
+      try {
+        if (reneg.type === 'offer' && reneg.seq !== c.lastRenegSeq) {
+          c.lastRenegSeq = reneg.seq;
+          await c.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: reneg.sdp }));
+
+          if (reneg.mode === 'video') {
+            c.isVideo = true;
+            c.camOff = false;
+            c.speakerOn = true;
+            try {
+              if (!c.localStream.getVideoTracks().length) {
+                const vs = await navigator.mediaDevices.getUserMedia({ video: { facingMode: c.facingMode } });
+                const vTrack = vs.getVideoTracks()[0];
+                if (vTrack) {
+                  c.localStream.addTrack(vTrack);
+                  const vSender = c.pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+                  if (vSender) await vSender.replaceTrack(vTrack);
+                  else c.pc.addTrack(vTrack, c.localStream);
+                }
+              }
+              $('local-video').srcObject = c.localStream;
+              $('local-video').classList.remove('hidden');
+            } catch (camErr) {}
+            if ($('remote-video').srcObject) $('remote-video').classList.remove('hidden');
+            applyAudioOutput();
+            toast('Switched to Video Call', 'info');
+          } else {
+            c.isVideo = false;
+            c.camOff = false;
+            c.localStream.getVideoTracks().forEach((t) => { t.stop(); c.localStream.removeTrack(t); });
+            const vSender = c.pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+            if (vSender) {
+              try { c.pc.removeTrack(vSender); } catch (e) { await vSender.replaceTrack(null).catch(() => {}); }
+            }
+            $('local-video').srcObject = null;
+            $('local-video').classList.add('hidden');
+            $('remote-video').classList.add('hidden');
+            toast('Switched to Audio Call', 'info');
+          }
+
+          const answer = await c.pc.createAnswer();
+          await c.pc.setLocalDescription(answer);
+          await updateDoc(pubDoc('calls', c.callId), {
+            isVideo: c.isVideo,
+            reneg: { seq: reneg.seq, fromId: state.myProfile.id, type: 'answer', sdp: answer.sdp, mode: reneg.mode }
+          });
+          updateCallUI();
+        } else if (reneg.type === 'answer' && reneg.seq === c.pendingRenegSeq) {
+          c.pendingRenegSeq = 0;
+          await c.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: reneg.sdp }));
+        }
+      } catch (err) {
+        console.warn('Renegotiation error:', err);
+      }
     }
 
     async function startCall(targetId, isVideo) {
@@ -2662,10 +3042,12 @@
 
         state.call = {
           status: 'CALLING', callId, remoteId: cleanId(targetId), isVideo: !!isVideo, isCaller: true,
-          pc, localStream: stream, muted: false, camOff: false, facingMode: 'user',
+          pc, localStream: stream, muted: false, speakerOn: !!isVideo, btDeviceName: state.call.btDeviceName || '',
+          camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
           startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
         };
 
+        resetLocalVideoPos();
         if (isVideo) {
           $('local-video').srcObject = stream;
           $('local-video').classList.remove('hidden');
@@ -2683,6 +3065,8 @@
           ts: Date.now()
         });
 
+        detectBluetoothAudio();
+        applyAudioOutput();
         updateCallUI();
         startRing(false);
         listenToCallDoc(callId, true);
@@ -2699,9 +3083,12 @@
     function handleIncomingCallDoc(c) {
       state.call = {
         status: 'RINGING', callId: c._docId, remoteId: cleanId(c.callerId), isVideo: !!c.isVideo, isCaller: false,
-        pc: null, localStream: null, muted: false, camOff: false, facingMode: 'user',
+        pc: null, localStream: null, muted: false, speakerOn: !!c.isVideo, btDeviceName: state.call.btDeviceName || '',
+        camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
         startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
       };
+      resetLocalVideoPos();
+      detectBluetoothAudio();
       updateCallUI();
       startRing(true);
       listenToCallDoc(c._docId, false);
@@ -2743,6 +3130,8 @@
           });
         }));
 
+        detectBluetoothAudio();
+        applyAudioOutput();
         markCallConnected();
       } catch (e) {
         toast('Could not accept call — check mic/camera permission', 'error');
@@ -2756,13 +3145,13 @@
         if (ev.candidate) addDoc(candCol, ev.candidate.toJSON()).catch(() => {});
       };
       pc.ontrack = (ev) => {
-        const remoteStream = ev.streams[0];
-        if (!remoteStream) return;
+        const remoteStream = ev.streams[0] || new MediaStream([ev.track]);
         $('remote-audio').srcObject = remoteStream;
-        if (state.call.isVideo) {
-          $('remote-video').srcObject = remoteStream;
-          $('remote-video').classList.remove('hidden');
+        $('remote-video').srcObject = remoteStream;
+        if (ev.track.kind === 'video' || state.call.isVideo) {
+          if (state.call.isVideo) $('remote-video').classList.remove('hidden');
         }
+        applyAudioOutput();
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
@@ -2792,6 +3181,9 @@
           }));
           markCallConnected();
         }
+        if (data.reneg && state.call.status === 'CONNECTED') {
+          await handleCallRenegotiation(data.reneg);
+        }
       });
       state.call.unsubs.push(unsub);
     }
@@ -2801,6 +3193,8 @@
       if (c.ringTimeoutId) { clearTimeout(c.ringTimeoutId); c.ringTimeoutId = null; }
       c.status = 'CONNECTED';
       c.startTs = Date.now();
+      detectBluetoothAudio();
+      applyAudioOutput();
       updateCallUI();
       if (c.timerId) clearInterval(c.timerId);
       c.timerId = setInterval(() => {
@@ -2828,12 +3222,15 @@
       if (c.localStream) c.localStream.getTracks().forEach((t) => t.stop());
       $('remote-video').srcObject = null;
       $('remote-video').classList.add('hidden');
+      $('call-video-vignette').classList.add('hidden');
       $('local-video').srcObject = null;
       $('local-video').classList.add('hidden');
+      resetLocalVideoPos();
       $('remote-audio').srcObject = null;
       state.call = {
         status: 'IDLE', callId: null, remoteId: null, isVideo: false, isCaller: false,
-        pc: null, localStream: null, muted: false, camOff: false, facingMode: 'user',
+        pc: null, localStream: null, muted: false, speakerOn: false, btDeviceName: c.btDeviceName || '',
+        camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
         startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
       };
       updateCallUI();
@@ -3477,6 +3874,10 @@
       on('btn-voice-send', 'click', () => stopVoiceRecording(false));
 
       // Call Controls
+      initDraggableLocalVideo();
+      if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+        navigator.mediaDevices.addEventListener('devicechange', detectBluetoothAudio);
+      }
       on('btn-call-accept', 'click', acceptIncomingCall);
       on('btn-call-hangup', 'click', () => endCall());
       on('btn-call-mute', 'click', () => {
@@ -3486,12 +3887,17 @@
         c.localStream.getAudioTracks().forEach((t) => { t.enabled = !c.muted; });
         updateCallUI();
       });
-      on('btn-call-cam', 'click', () => {
+      on('btn-call-speaker', 'click', async () => {
         const c = state.call;
-        if (!c.localStream) return;
-        c.camOff = !c.camOff;
-        c.localStream.getVideoTracks().forEach((t) => { t.enabled = !c.camOff; });
+        c.speakerOn = !c.speakerOn;
+        await applyAudioOutput();
         updateCallUI();
+        toast(c.speakerOn ? 'Speaker ON' : 'Earpiece / Standard Audio', 'info');
+      });
+      on('btn-call-switch-mode', 'click', () => {
+        const c = state.call;
+        if (c.status !== 'CONNECTED') return;
+        switchCallMode(!c.isVideo);
       });
       on('btn-call-flip', 'click', async () => {
         const c = state.call;
