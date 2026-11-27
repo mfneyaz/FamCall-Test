@@ -18,7 +18,7 @@
        ===================================================================== -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+     apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
   authDomain: "miv-reservation-system.firebaseapp.com",
   projectId: "miv-reservation-system",
   storageBucket: "miv-reservation-system.firebasestorage.app",
@@ -1017,9 +1017,156 @@
       flex-direction: column;
       gap: 14px;
     }
+
+    /* Animated Dark Spatial Glass Splash Screen */
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(48px + var(--safe-top)) 24px calc(34px + var(--safe-bottom));
+      background:
+        radial-gradient(circle at 50% 34%, rgba(56, 189, 248, 0.22) 0%, rgba(7, 17, 36, 0.96) 52%, #040814 100%);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    #splash-screen.fade-out {
+      opacity: 0;
+      transform: scale(1.03);
+      pointer-events: none;
+    }
+    .splash-logo-wrap {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .splash-ring {
+      position: absolute;
+      inset: -12px;
+      border-radius: 34px;
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      box-shadow: 0 0 28px rgba(56, 189, 248, 0.28);
+      animation: splashPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(0.96); opacity: 0.55; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+    .splash-bar {
+      width: 168px;
+      height: 3.5px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.18);
+      overflow: hidden;
+      margin-top: 14px;
+    }
+    .splash-bar-fill {
+      width: 45%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0284c7, #38bdf8, #7dd3fc);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+      animation: splashLoad 1.35s ease-in-out forwards;
+    }
+    @keyframes splashLoad {
+      from { width: 10%; }
+      to { width: 100%; }
+    }
+    .splash-dev-pill {
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(11, 20, 38, 0.82);
+      border: 1px solid rgba(251, 191, 36, 0.34);
+      box-shadow: 0 0 22px rgba(251, 191, 36, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      text-align: center;
+      font-size: 11.5px;
+      color: #cbd5e1;
+      letter-spacing: 0.03em;
+    }
+
+    /* Call Log Theme Icon Badges */
+    .call-log-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      background: linear-gradient(145deg, rgba(14, 58, 98, 0.55), rgba(7, 20, 42, 0.92));
+      color: #7dd3fc;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .call-log-badge.video {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+    .call-log-badge.audio {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.42);
+      background: linear-gradient(145deg, rgba(6, 95, 70, 0.42), rgba(5, 36, 28, 0.92));
+    }
+    .call-log-badge.missed {
+      color: #fda4af;
+      border-color: rgba(244, 63, 94, 0.45);
+      background: linear-gradient(145deg, rgba(136, 19, 55, 0.45), rgba(52, 8, 22, 0.92));
+    }
+
+    /* Profile Photo Cropper Modal */
+    .crop-stage {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      margin: 0 auto;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #020612;
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+      touch-action: none;
+      cursor: grab;
+    }
+    .crop-stage:active { cursor: grabbing; }
+    .crop-stage canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .crop-circle-mask {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 50%;
+      box-shadow: 0 0 0 999px rgba(2, 6, 18, 0.58);
+      border: 2px solid rgba(56, 189, 248, 0.85);
+    }
   </style>
 </head>
 <body>
+  <!-- Animated Splash Screen -->
+  <div id="splash-screen">
+    <div style="height:10px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;">
+      <div class="splash-logo-wrap">
+        <div class="splash-ring"></div>
+        <div id="splash-brand-icon" style="width:94px;height:94px;position:relative;z-index:2;"></div>
+      </div>
+      <div>
+        <div style="font-size:26px;font-weight:900;letter-spacing:-0.02em;color:#f8fafc;text-shadow:0 0 22px rgba(56,189,248,0.35);">FamCall HUD</div>
+        <div style="font-size:11.5px;font-weight:700;color:#7dd3fc;letter-spacing:0.12em;text-transform:uppercase;margin-top:4px;">Encrypted Family Connect</div>
+      </div>
+      <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+    </div>
+    <div class="splash-dev-pill">
+      Application Developed by <span class="author-name">Mohammad Firoz Alam</span>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <div id="config-warning-banner" class="hidden"></div>
 
@@ -1219,6 +1366,35 @@
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
             <button id="btn-change-my-photo" type="button" class="btn btn-ghost" style="padding:6px 11px;font-size:11px;">Photo</button>
             <button id="btn-remove-my-photo" type="button" class="btn btn-danger hidden" style="padding:6px 11px;font-size:11px;">Remove</button>
+          </div>
+        </div>
+
+        <!-- Display Name & PIN Settings -->
+        <form id="form-edit-name" class="glass" style="border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;">DISPLAY NAME</div>
+          <div style="display:flex;gap:8px;">
+            <input id="input-edit-name" type="text" class="field" placeholder="Your name" required />
+            <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Save</button>
+          </div>
+        </form>
+
+        <form id="form-edit-pin" class="glass" style="border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:700;color:#94a3b8;">CHANGE 4-DIGIT PIN</div>
+          <div style="display:flex;gap:8px;">
+            <input id="input-edit-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="New 4-digit PIN" required />
+            <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Update</button>
+          </div>
+        </form>
+
+        <!-- Ringtone Controls -->
+        <div class="glass" style="border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;">Call Ringtone</div>
+            <div style="font-size:11px;color:#94a3b8;">Loud melodic chime for incoming calls</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="btn-test-ring" type="button" class="btn btn-ghost" style="padding:7px 11px;font-size:11.5px;">Test</button>
+            <button id="btn-toggle-ring" type="button" class="btn btn-cyan" style="padding:7px 12px;font-size:11.5px;">ON</button>
           </div>
         </div>
 
@@ -1481,6 +1657,28 @@
     </div>
   </div>
 
+  <!-- Profile Photo Cropper Modal -->
+  <div id="photo-crop-modal" class="modal-backdrop hidden" style="z-index:760;">
+    <div class="glass-strong modal-card" style="width:min(100%, 350px);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:15.5px;font-weight:800;">Crop Profile Photo</div>
+        <span style="font-size:11px;color:#94a3b8;">Drag &amp; Zoom</span>
+      </div>
+      <div id="crop-stage" class="crop-stage">
+        <canvas id="crop-canvas" width="260" height="260"></canvas>
+        <div class="crop-circle-mask"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:11px;font-weight:700;color:#94a3b8;">Zoom</span>
+        <input id="crop-zoom" type="range" min="1" max="3" step="0.02" value="1" style="flex:1;accent-color:#38bdf8;" />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="btn-crop-cancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="btn-crop-apply" type="button" class="btn btn-cyan">Use Photo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 7. APPLICATION MODULE ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1687,91 +1885,131 @@
       const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(APP_ICON_SVG);
       const imgHtml = `<img src="${svgUrl}" alt="FamCall HUD" style="width:100%;height:100%;display:block;border-radius:10px;" />`;
       if ($('dynamic-favicon')) $('dynamic-favicon').href = svgUrl;
+      if ($('apple-touch-icon')) $('apple-touch-icon').href = svgUrl;
+      if ($('splash-brand-icon')) $('splash-brand-icon').innerHTML = imgHtml;
       if ($('auth-brand-icon')) $('auth-brand-icon').innerHTML = imgHtml;
       if ($('header-brand-icon')) $('header-brand-icon').innerHTML = imgHtml;
-
-      // Render a crisp 512x512 PNG for iOS home screen & fallback manifest
-      const pngImg = new Image();
-      pngImg.onload = () => {
-        try {
-          const c = document.createElement('canvas');
-          c.width = 512; c.height = 512;
-          c.getContext('2d').drawImage(pngImg, 0, 0, 512, 512);
-          const pngUrl = c.toDataURL('image/png');
-          if ($('apple-touch-icon')) $('apple-touch-icon').href = pngUrl;
-
-          // Keep static ./manifest.json when hosted (required for Chrome WebAPK without badge);
-          // only fall back to dynamic manifest if ./manifest.json is missing.
-          fetch('./manifest.json', { cache: 'no-cache' }).then((res) => {
-            if (res.ok) return;
-            const manifest = {
-              name: 'FamCall HUD — Family Connect',
-              short_name: 'FamCall',
-              start_url: './',
-              scope: './',
-              display: 'standalone',
-              background_color: '#040814',
-              theme_color: '#040814',
-              icons: [{ src: pngUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
-            };
-            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-            if ($('dynamic-manifest')) $('dynamic-manifest').href = URL.createObjectURL(blob);
-          }).catch(() => {});
-        } catch (e) {}
-      };
-      pngImg.src = svgUrl;
-
-      // Register Service Worker for standalone WebAPK install (no Chrome badge)
-      if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
     }
 
-    /* ---------- 3. END-TO-END ENCRYPTION (ECDH P-256 + AES-256-GCM) ---------- */
+    /* ---------- 3. APPLICATION STATE & STORAGE ---------- */
     const hasWebCrypto = !!(window.crypto && window.crypto.subtle);
     const textEnc = new TextEncoder();
     const textDec = new TextDecoder();
 
-    function u8ToB64(u8) {
+    function loadRememberedProfile() {
+      try {
+        const raw = localStorage.getItem(LS_PROFILE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function saveRememberedProfile(prof) {
+      try {
+        if (prof) localStorage.setItem(LS_PROFILE_KEY, JSON.stringify(prof));
+        else localStorage.removeItem(LS_PROFILE_KEY);
+      } catch (e) {}
+    }
+    function loadCustomTurn() {
+      try {
+        const raw = localStorage.getItem(LS_TURN_KEY);
+        return raw ? JSON.parse(raw) : { url: '', username: '', credential: '' };
+      } catch (e) { return { url: '', username: '', credential: '' }; }
+    }
+
+    const state = {
+      fbUser: null,
+      fbReady: false,
+      listenersStarted: false,
+      unsubs: [],
+      presenceTimer: null,
+      myProfile: null,
+      sessionPlainPin: null,
+      isLocked: true,
+      enteredPin: '',
+      activeTab: 'chats',
+      search: '',
+      profilesMap: {},
+      friendIds: new Set(),
+      contactMeta: {},
+      incomingRequests: [],
+      sentRequests: [],
+      typingMap: {},
+      rawMsgById: new Map(),
+      decryptedCache: new Map(),
+      messagesByPeer: {},
+      activeChatId: null,
+      renderedChatId: null,
+      chatSelectMode: false,
+      selectedMsgIds: new Set(),
+      callHistory: [],
+      ringtoneEnabled: localStorage.getItem(LS_RING_KEY) !== 'off',
+      ringTimer: null,
+      ringCtx: null,
+      customTurn: loadCustomTurn(),
+      deferredInstallPrompt: null,
+      photoPickerMode: null,
+      setupPhotoData: '',
+      editContactTargetId: null,
+      editContactPhotoData: '',
+      lightboxDataUrl: '',
+      lightboxFilename: 'famcall-photo.jpg',
+      confirmCallback: null,
+      lastContactsSig: '',
+      contactsRenderQueued: false,
+      e2ee: { ready: false, privateKey: null, privateKeyJwk: null, sharedKeys: new Map(), pairKeys: new Map() },
+      voice: { recorder: null, chunks: [], stream: null, startTs: 0, timerId: null },
+      call: {
+        status: 'IDLE', callId: null, remoteId: null, isVideo: false, isCaller: false,
+        pc: null, localStream: null, muted: false, speakerOn: false, btDeviceName: '',
+        camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
+        startTs: 0, timerId: null, ringTimeoutId: null, wakeLock: null, keepAliveCtx: null, unsubs: []
+      }
+    };
+
+    /* ---------- 4. WEB CRYPTO AES-256-GCM END-TO-END ENCRYPTION ---------- */
+    function b64Enc(buf) {
+      const bytes = new Uint8Array(buf);
       let bin = '';
-      for (let i = 0; i < u8.length; i += 0x8000) {
-        bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       }
       return btoa(bin);
     }
-    function b64ToU8(b64) {
-      const bin = atob(b64);
-      const u8 = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-      return u8;
+    function b64Dec(str) {
+      const bin = atob(str);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
     }
-    async function derivePinKey(pin, saltStr) {
+    async function derivePinKey(pin, famId) {
       const base = await crypto.subtle.importKey('raw', textEnc.encode(String(pin)), 'PBKDF2', false, ['deriveKey']);
       return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: textEnc.encode('famcall-e2ee::' + saltStr), iterations: 60000, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: textEnc.encode('famcall-e2ee-v1::' + cleanId(famId)), iterations: 60000, hash: 'SHA-256' },
         base,
         { name: 'AES-GCM', length: 256 },
         false,
         ['encrypt', 'decrypt']
       );
     }
-    async function wrapPrivateJwk(jwk, pin, uid) {
-      const k = await derivePinKey(pin, uid);
+    async function wrapPrivateJwk(jwk, pin, famId) {
+      const key = await derivePinKey(pin, famId);
       const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, textEnc.encode(JSON.stringify(jwk)));
-      return { iv: u8ToB64(iv), ct: u8ToB64(new Uint8Array(ct)) };
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, textEnc.encode(JSON.stringify(jwk)));
+      return { iv: b64Enc(iv), ct: b64Enc(ct) };
     }
-    async function unwrapPrivateJwk(wrapped, pin, uid) {
-      const k = await derivePinKey(pin, uid);
-      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToU8(wrapped.iv) }, k, b64ToU8(wrapped.ct));
+    async function unwrapPrivateJwk(wrapped, pin, famId) {
+      const key = await derivePinKey(pin, famId);
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64Dec(wrapped.iv) }, key, b64Dec(wrapped.ct));
       return JSON.parse(textDec.decode(pt));
     }
     async function ensureUserE2EEKeys(prof, plainPin) {
       if (!hasWebCrypto || !prof || !prof.id) return;
       try {
         let privJwk = null;
-        if (prof.encPrivKey && plainPin) {
-          try { privJwk = await unwrapPrivateJwk(prof.encPrivKey, plainPin, prof.id); } catch (e) {}
+        if (plainPin && prof.encPrivKey && prof.encPrivKey.iv && prof.encPrivKey.ct) {
+          privJwk = await unwrapPrivateJwk(prof.encPrivKey, plainPin, prof.id).catch(() => null);
         }
         if (!privJwk) {
           try {
@@ -1779,325 +2017,240 @@
             if (cached && cached.id === prof.id && cached.jwk) privJwk = cached.jwk;
           } catch (e) {}
         }
-        if (privJwk) {
-          state.e2ee.privateKeyJwk = privJwk;
-          state.e2ee.privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
-          state.e2ee.ready = true;
-          try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
-          return;
-        }
-        const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
-        const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
-        const newPrivJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
-        state.e2ee.privateKey = kp.privateKey;
-        state.e2ee.privateKeyJwk = newPrivJwk;
-        state.e2ee.ready = true;
-        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: newPrivJwk })); } catch (e) {}
-        if (db && state.fbUser) {
+        if (!privJwk) {
+          const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
+          privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+          const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
           const patch = { pubKeyJwk: pubJwk };
-          if (plainPin) patch.encPrivKey = await wrapPrivateJwk(newPrivJwk, plainPin, prof.id);
-          await updateDoc(pubDoc('profiles', prof.id), patch).catch(() => {});
+          if (plainPin) patch.encPrivKey = await wrapPrivateJwk(privJwk, plainPin, prof.id);
+          prof.pubKeyJwk = pubJwk;
+          if (patch.encPrivKey) prof.encPrivKey = patch.encPrivKey;
+          if (db && state.fbUser) await updateDoc(pubDoc('profiles', prof.id), patch).catch(() => {});
+          saveRememberedProfile(prof);
         }
+        const privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
+        state.e2ee.privateKey = privateKey;
+        state.e2ee.privateKeyJwk = privJwk;
+        state.e2ee.ready = true;
+        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
       } catch (e) {
-        console.warn('E2EE key setup skipped:', e);
+        console.warn('E2EE init fallback:', e);
       }
     }
-    async function getPairFallbackKey(peerId) {
+    async function getSharedAesKey(peerId) {
+      if (!hasWebCrypto || !state.myProfile) return null;
       const pid = cleanId(peerId);
-      if (state.e2ee.pairKeys.has(pid)) return state.e2ee.pairKeys.get(pid);
-      const pairStr = 'famcall-e2ee-pair-v1::' + makePairId(state.myProfile.id, pid);
-      const hashBuf = await crypto.subtle.digest('SHA-256', textEnc.encode(pairStr));
-      const key = await crypto.subtle.importKey('raw', hashBuf, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-      state.e2ee.pairKeys.set(pid, key);
-      return key;
-    }
-    async function getSharedAesKey(peerId, forceMode) {
-      const pid = cleanId(peerId);
-      if (forceMode === 'pair') return { mode: 'pair', key: await getPairFallbackKey(pid) };
-      const peerProf = state.allProfiles[pid];
-      if (state.e2ee.privateKey && peerProf && peerProf.pubKeyJwk) {
-        if (state.e2ee.sharedKeys.has(pid)) return { mode: 'ecdh', key: state.e2ee.sharedKeys.get(pid) };
-        const peerPub = await crypto.subtle.importKey('jwk', peerProf.pubKeyJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
-        const key = await crypto.subtle.deriveKey(
-          { name: 'ECDH', public: peerPub },
-          state.e2ee.privateKey,
-          { name: 'AES-GCM', length: 256 },
-          false,
-          ['encrypt', 'decrypt']
-        );
-        state.e2ee.sharedKeys.set(pid, key);
-        return { mode: 'ecdh', key };
+      const peerProf = state.profilesMap[pid];
+      if (state.e2ee.ready && state.e2ee.privateKey && peerProf && peerProf.pubKeyJwk) {
+        const cacheKey = pid + ':' + (peerProf.pubKeyJwk.x || '');
+        if (state.e2ee.sharedKeys.has(cacheKey)) return state.e2ee.sharedKeys.get(cacheKey);
+        try {
+          const peerPub = await crypto.subtle.importKey('jwk', peerProf.pubKeyJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+          const aes = await crypto.subtle.deriveKey(
+            { name: 'ECDH', public: peerPub },
+            state.e2ee.privateKey,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt', 'decrypt']
+          );
+          state.e2ee.sharedKeys.set(cacheKey, aes);
+          return aes;
+        } catch (e) {}
       }
-      if (forceMode === 'ecdh') return null;
-      return { mode: 'pair', key: await getPairFallbackKey(pid) };
+      // Deterministic pair-key fallback if peer has not published ECDH key yet
+      const pair = makePairId(state.myProfile.id, pid);
+      if (state.e2ee.pairKeys.has(pair)) return state.e2ee.pairKeys.get(pair);
+      try {
+        const raw = await crypto.subtle.digest('SHA-256', textEnc.encode('famcall-pair-aes::' + pair));
+        const aes = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+        state.e2ee.pairKeys.set(pair, aes);
+        return aes;
+      } catch (e) { return null; }
     }
     async function encryptMessagePayload(peerId, payloadObj) {
-      if (!hasWebCrypto) return null;
-      const derived = await getSharedAesKey(peerId);
-      if (!derived) return null;
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, derived.key, textEnc.encode(JSON.stringify(payloadObj)));
-      return { e2ee: derived.mode, iv: u8ToB64(iv), ct: u8ToB64(new Uint8Array(ct)) };
-    }
-    async function decryptMessageDoc(rawDoc, peerId) {
-      if (!rawDoc || !rawDoc.e2ee) return rawDoc;
-      if (state.decryptedCache.has(rawDoc._docId)) {
-        const cached = state.decryptedCache.get(rawDoc._docId);
-        return { ...cached, delivered: !!rawDoc.delivered, read: !!rawDoc.read };
-      }
-      if (!hasWebCrypto) return { ...rawDoc, text: '🔒 Encrypted message' };
+      const aes = await getSharedAesKey(peerId);
+      if (!aes) return null;
       try {
-        const derived = await getSharedAesKey(peerId, rawDoc.e2ee);
-        if (!derived) return { ...rawDoc, text: '🔒 Unlocking encryption...', _pendingDecrypt: true };
-        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToU8(rawDoc.iv) }, derived.key, b64ToU8(rawDoc.ct));
-        const parsed = JSON.parse(textDec.decode(pt));
-        const merged = {
-          _docId: rawDoc._docId, chatId: rawDoc.chatId, fromId: rawDoc.fromId, toId: rawDoc.toId,
-          ts: rawDoc.ts, e2ee: rawDoc.e2ee, delivered: !!rawDoc.delivered, read: !!rawDoc.read, ...parsed
-        };
-        state.decryptedCache.set(rawDoc._docId, merged);
-        return merged;
-      } catch (e) {
-        return { ...rawDoc, text: '🔒 Encrypted with different PIN/key' };
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, textEnc.encode(JSON.stringify(payloadObj)));
+        const peerProf = state.profilesMap[cleanId(peerId)];
+        return { enc: true, e2eeVer: (state.e2ee.ready && peerProf?.pubKeyJwk) ? 2 : 1, iv: b64Enc(iv), ct: b64Enc(ct) };
+      } catch (e) { return null; }
+    }
+    async function decryptMessageDoc(docId, raw) {
+      if (!raw || !raw.enc || !raw.iv || !raw.ct) return { ...raw, _docId: docId };
+      if (state.decryptedCache.has(docId)) {
+        return { ...raw, ...state.decryptedCache.get(docId), _docId: docId };
       }
-    }
-
-    /* ---------- 4. APP STATE ---------- */
-    let fbApp = null, fbAuth = null, db = null;
-
-    const state = {
-      fbUser: null,
-      fbReadyPromise: null,
-      listenersStarted: false,
-      myProfile: null,
-      sessionPlainPin: null,
-      setupPhotoData: '',
-      isLocked: true,
-      enteredPin: '',
-      activeTab: 'chats',
-      activeChatId: null,
-      search: '',
-      allProfiles: {},
-      friendIds: new Set(),
-      contactMeta: {},
-      incomingRequests: [],
-      sentRequests: [],
-      messagesByPeer: {},
-      rawMsgById: new Map(),
-      decryptedCache: new Map(),
-      e2ee: { ready: false, privateKey: null, privateKeyJwk: null, sharedKeys: new Map(), pairKeys: new Map() },
-      lastContactsSig: '',
-      contactsRafId: null,
-      renderedChatId: null,
-      readCounts: {},
-      typingMap: {},
-      callHistory: [],
-      chatSelectMode: false,
-      selectedMsgIds: new Set(),
-      ringtoneEnabled: localStorage.getItem(LS_RING_KEY) !== 'off',
-      customTurn: (() => { try { return JSON.parse(localStorage.getItem(LS_TURN_KEY) || '{}'); } catch { return {}; } })(),
-      unsubs: [],
-      heartbeatId: null,
-      presenceTickId: null,
-      photoPickerMode: null,
-      editContactTargetId: null,
-      editContactPhotoData: '',
-      lightboxDataUrl: '',
-      lightboxFilename: '',
-      confirmCallback: null,
-      deferredInstallPrompt: null,
-      voice: { recorder: null, chunks: [], stream: null, startTs: 0, timerId: null },
-      call: {
-        status: 'IDLE',
-        callId: null,
-        remoteId: null,
-        isVideo: false,
-        isCaller: false,
-        pc: null,
-        localStream: null,
-        muted: false,
-        speakerOn: false,
-        btDeviceName: '',
-        camOff: false,
-        facingMode: 'user',
-        lastRenegSeq: 0,
-        pendingRenegSeq: 0,
-        startTs: 0,
-        timerId: null,
-        ringTimeoutId: null,
-        wakeLock: null,
-        keepAliveCtx: null,
-        unsubs: []
-      }
-    };
-
-    const pubCol = (name) => collection(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name);
-    const pubDoc = (name, id) => doc(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name, id);
-    function isPeerOnline(cid) {
-      const p = state.allProfiles[cleanId(cid)];
-      return !!(p && p.online && Date.now() - (p.lastSeen || 0) < 75000);
-    }
-
-    function loadRememberedProfile() {
-      try { return JSON.parse(localStorage.getItem(LS_PROFILE_KEY) || 'null'); } catch { return null; }
-    }
-    function saveRememberedProfile(prof) {
+      const myId = state.myProfile?.id;
+      const peerId = raw.fromId === myId ? raw.toId : raw.fromId;
       try {
-        if (!prof) localStorage.removeItem(LS_PROFILE_KEY);
-        else localStorage.setItem(LS_PROFILE_KEY, JSON.stringify({
-          id: prof.id, name: prof.name, pinHash: prof.pinHash, avatar: prof.avatar || ''
-        }));
+        let aes = null;
+        if (raw.e2eeVer === 1) {
+          const pair = makePairId(myId, peerId);
+          const rawKey = await crypto.subtle.digest('SHA-256', textEnc.encode('famcall-pair-aes::' + pair));
+          aes = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        } else {
+          aes = await getSharedAesKey(peerId);
+        }
+        if (aes) {
+          const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64Dec(raw.iv) }, aes, b64Dec(raw.ct));
+          const parsed = JSON.parse(textDec.decode(pt));
+          state.decryptedCache.set(docId, parsed);
+          return { ...raw, ...parsed, _docId: docId };
+        }
       } catch (e) {}
+      return { ...raw, text: '🔒 Encrypted message (re-syncing key...)', _pendingDecrypt: true, _docId: docId };
     }
 
-    function setP2PStatus(cls, text) {
-      const pill = $('status-pill');
-      const label = $('status-pill-text');
-      if (pill) pill.className = 'status-pill ' + cls;
-      if (label) label.textContent = text;
-    }
-
-    /* ---------- 5. LOUD MELODIC RINGTONE ENGINE ---------- */
-    let ringCtx = null, ringInterval = null, vibInterval = null;
-
-    function playRingToneBurst() {
+    /* ---------- 5. LOUD MELODIC RINGTONE SYNTHESIZER ---------- */
+    function playRingToneBurst(isIncoming = true) {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
-        if (!ringCtx) ringCtx = new AC();
-        if (ringCtx.state === 'suspended') ringCtx.resume();
+        if (!state.ringCtx || state.ringCtx.state === 'closed') state.ringCtx = new AC();
+        const ctx = state.ringCtx;
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-        const comp = ringCtx.createDynamicsCompressor();
-        comp.threshold.value = -12;
-        comp.knee.value = 18;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -10;
+        comp.knee.value = 12;
         comp.ratio.value = 8;
         comp.attack.value = 0.003;
         comp.release.value = 0.15;
 
-        const master = ringCtx.createGain();
-        master.gain.value = 0.95;
+        const master = ctx.createGain();
+        master.gain.value = isIncoming ? 0.95 : 0.38;
         comp.connect(master);
-        master.connect(ringCtx.destination);
+        master.connect(ctx.destination);
 
-        const notes = [880, 1108.73, 1318.51, 1760, 1318.51, 1760];
-        const t0 = ringCtx.currentTime;
-        notes.forEach((freq, idx) => {
-          const st = t0 + idx * 0.13;
-          [1, 2].forEach((mult, hi) => {
-            const osc = ringCtx.createOscillator();
-            const g = ringCtx.createGain();
-            osc.type = hi === 0 ? 'triangle' : 'sine';
-            osc.frequency.setValueAtTime(freq * mult, st);
-            g.gain.setValueAtTime(0.001, st);
-            g.gain.exponentialRampToValueAtTime(hi === 0 ? 0.55 : 0.24, st + 0.015);
-            g.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
-            osc.connect(g);
-            g.connect(comp);
-            osc.start(st);
-            osc.stop(st + 0.24);
-          });
+        const now = ctx.currentTime;
+        const notes = isIncoming
+          ? [
+              { f: 659.25, t: 0.00, d: 0.16 },
+              { f: 880.00, t: 0.15, d: 0.16 },
+              { f: 1174.66, t: 0.30, d: 0.22 },
+              { f: 1318.51, t: 0.52, d: 0.32 },
+              { f: 1046.50, t: 0.86, d: 0.18 },
+              { f: 1318.51, t: 1.04, d: 0.36 }
+            ]
+          : [{ f: 440, t: 0.0, d: 0.45 }, { f: 480, t: 0.0, d: 0.45 }];
+
+        notes.forEach((n) => {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc1.type = isIncoming ? 'triangle' : 'sine';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(n.f, now + n.t);
+          osc2.frequency.setValueAtTime(n.f * 2, now + n.t);
+          g.gain.setValueAtTime(0.001, now + n.t);
+          g.gain.linearRampToValueAtTime(0.7, now + n.t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+          osc1.connect(g);
+          if (isIncoming) osc2.connect(g);
+          g.connect(comp);
+          osc1.start(now + n.t);
+          osc1.stop(now + n.t + n.d + 0.03);
+          if (isIncoming) {
+            osc2.start(now + n.t);
+            osc2.stop(now + n.t + n.d + 0.03);
+          }
         });
+        if (isIncoming && navigator.vibrate) navigator.vibrate([320, 140, 320, 140, 400]);
       } catch (e) {}
     }
-
-    function startRing(incoming = true) {
+    function startRing(isIncoming = true) {
       stopRing();
       if (!state.ringtoneEnabled) return;
-      playRingToneBurst();
-      ringInterval = setInterval(playRingToneBurst, 1900);
-      if (incoming && navigator.vibrate) {
-        navigator.vibrate([450, 250, 450]);
-        vibInterval = setInterval(() => navigator.vibrate([450, 250, 450]), 1900);
-      }
+      playRingToneBurst(isIncoming);
+      state.ringTimer = setInterval(() => playRingToneBurst(isIncoming), isIncoming ? 2100 : 2800);
     }
-
     function stopRing() {
-      if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
-      if (vibInterval) { clearInterval(vibInterval); vibInterval = null; }
-      if (navigator.vibrate) navigator.vibrate(0);
+      if (state.ringTimer) { clearInterval(state.ringTimer); state.ringTimer = null; }
+      try { if (navigator.vibrate) navigator.vibrate(0); } catch (e) {}
     }
 
-    /* ---------- 6. FIREBASE INITIALIZATION (ZERO RACE CONDITION) ---------- */
-    function isConfigValid(cfg) {
-      return !!(cfg && cfg.apiKey && cfg.projectId && !String(cfg.apiKey).startsWith('PASTE_YOUR_'));
-    }
+    /* ---------- 6. FIREBASE INITIALIZATION ---------- */
+    let fbApp = null, auth = null, db = null, fbInitPromise = null;
 
+    function pubCol(name) {
+      return collection(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name);
+    }
+    function pubDoc(name, id) {
+      return doc(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name, id);
+    }
+    function setP2PStatus(kind, label) {
+      const pill = $('status-pill');
+      const txt = $('status-pill-text');
+      if (pill) {
+        pill.classList.remove('online', 'error', 'connecting');
+        pill.classList.add(kind);
+      }
+      if (txt) txt.textContent = label;
+    }
     function showConfigBanner(html) {
       const b = $('config-warning-banner');
       if (!b) return;
-      b.innerHTML = html;
-      b.classList.remove('hidden');
+      if (html) { b.innerHTML = html; b.classList.remove('hidden'); }
+      else { b.innerHTML = ''; b.classList.add('hidden'); }
     }
-
-    function initFirebase() {
-      if (state.fbReadyPromise) return state.fbReadyPromise;
-      state.fbReadyPromise = (async () => {
-        const cfg = window.FAMCALL_FIREBASE_CONFIG;
-        if (!isConfigValid(cfg)) {
-          setP2PStatus('error', 'Config Needed');
-          showConfigBanner(
-            '<b>Firebase Config Missing:</b> Open <code>index.html</code> and paste your 6 Firebase Web App keys inside <code>window.FAMCALL_FIREBASE_CONFIG</code>.'
-          );
-          return false;
-        }
+    async function initFirebase() {
+      if (fbInitPromise) return fbInitPromise;
+      fbInitPromise = (async () => {
         try {
-          fbApp = initializeApp(cfg);
-          fbAuth = getAuth(fbApp);
-          db = getFirestore(fbApp);
-
-          await new Promise((resolve) => {
-            const unsub = onAuthStateChanged(fbAuth, async (user) => {
+          let cfg = null;
+          if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            cfg = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+          } else {
+            cfg = window.FAMCALL_FIREBASE_CONFIG;
+          }
+          if (!cfg || !cfg.apiKey || String(cfg.apiKey).startsWith('PASTE_')) {
+            setP2PStatus('error', 'Setup Required');
+            showConfigBanner('<strong>Firebase Setup Needed:</strong> Paste your 6 Firebase Web App keys into <code>window.FAMCALL_FIREBASE_CONFIG</code> at the top of <code>index.html</code>.');
+            fbInitPromise = null;
+            return false;
+          }
+          showConfigBanner('');
+          setP2PStatus('connecting', 'Connecting...');
+          if (!fbApp) {
+            fbApp = initializeApp(cfg);
+            auth = getAuth(fbApp);
+            db = getFirestore(fbApp);
+            onAuthStateChanged(auth, (user) => {
+              state.fbUser = user || null;
               if (user) {
-                state.fbUser = user;
-                unsub();
-                resolve(true);
-              } else {
-                try {
-                  const cred = await signInAnonymously(fbAuth);
-                  state.fbUser = cred.user;
-                  unsub();
-                  resolve(true);
-                } catch (err) {
-                  setP2PStatus('error', 'Auth Error');
-                  showConfigBanner('<b>Firebase Auth Error:</b> Enable <b>Anonymous</b> sign-in under Firebase Console → Authentication → Sign-in method.');
-                  unsub();
-                  resolve(false);
+                state.fbReady = true;
+                setP2PStatus('online', 'Online');
+                if (state.myProfile && !state.isLocked && !state.listenersStarted) {
+                  startFirestoreListeners();
                 }
               }
             });
-          });
-
-          if (!state.fbUser) return false;
-          setP2PStatus('online', 'Online');
-
-          // If user already unlocked while Firebase was connecting, start listeners immediately!
-          if (!state.isLocked && state.myProfile && !state.listenersStarted) {
-            const snap = await getDoc(pubDoc('profiles', state.myProfile.id)).catch(() => null);
-            if (snap && snap.exists()) state.myProfile = { ...state.myProfile, ...snap.data() };
-            await ensureUserE2EEKeys(state.myProfile, state.sessionPlainPin);
-            startFirestoreListeners();
           }
-          return true;
+          if (!auth.currentUser) await signInAnonymously(auth);
+          state.fbUser = auth.currentUser;
+          state.fbReady = !!state.fbUser;
+          if (state.fbReady) {
+            setP2PStatus('online', 'Online');
+            if (state.myProfile && !state.isLocked && !state.listenersStarted) startFirestoreListeners();
+            return true;
+          }
+          return false;
         } catch (err) {
           console.error('Firebase init error:', err);
-          setP2PStatus('error', 'Init Failed');
-          showConfigBanner('<b>Firebase Init Failed:</b> ' + esc(err.message || 'Check your Firebase config keys.'));
+          setP2PStatus('error', 'Auth Error');
+          showConfigBanner('<strong>Firebase Auth Error:</strong> Enable <strong>Anonymous</strong> sign-in under Firebase Console → Authentication → Sign-in method (and check API key website restrictions).');
+          fbInitPromise = null;
           return false;
         }
       })();
-      return state.fbReadyPromise;
+      return fbInitPromise;
     }
-
     async function waitForFirebase() {
-      const ok = await initFirebase();
-      if (!ok || !db || !state.fbUser) {
-        toast('Connecting to Firebase... check your config & internet', 'error');
-        return false;
-      }
-      return true;
+      if (db && state.fbUser) return true;
+      return await initFirebase();
     }
-
-    /* ---------- 7. FIRESTORE LISTENERS & PRESENCE ---------- */
     async function setPresence(online) {
       if (!db || !state.fbUser || !state.myProfile) return;
       try {
@@ -2108,340 +2261,274 @@
       } catch (e) {}
     }
 
-    function stopFirestoreListeners() {
-      state.unsubs.forEach((u) => { try { u(); } catch (e) {} });
-      state.unsubs = [];
-      state.listenersStarted = false;
-      if (state.heartbeatId) { clearInterval(state.heartbeatId); state.heartbeatId = null; }
-      if (state.presenceTickId) { clearInterval(state.presenceTickId); state.presenceTickId = null; }
+    /* ---------- 7. FIRESTORE REAL-TIME LISTENERS ---------- */
+    function isPeerOnline(fid) {
+      const p = state.profilesMap[cleanId(fid)];
+      if (!p) return false;
+      return !!(p.online && (Date.now() - (p.lastSeen || 0) < 95000));
+    }
+    function getContactView(fid) {
+      const id = cleanId(fid);
+      const prof = state.profilesMap[id] || {};
+      const meta = state.contactMeta[id] || {};
+      return {
+        id,
+        name: meta.nickname || prof.name || id,
+        avatar: meta.avatar || prof.avatar || '',
+        online: isPeerOnline(id)
+      };
     }
 
-    function startFirestoreListeners() {
-      stopFirestoreListeners();
-      if (!db || !state.fbUser || !state.myProfile) return;
-      state.listenersStarted = true;
+    async function markChatAsRead(peerId) {
+      if (!peerId || !state.myProfile || !db || !state.fbUser) return;
       const myId = state.myProfile.id;
-
-      setP2PStatus('online', 'Online');
-      setPresence(true);
-      state.heartbeatId = setInterval(() => setPresence(true), 30000);
-      state.presenceTickId = setInterval(() => {
-        scheduleContactsRender();
-        if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
-      }, 20000);
-
-      // 1. Profiles
-      state.unsubs.push(onSnapshot(pubCol('profiles'), async (snap) => {
-        const map = {};
-        let pubKeyChanged = false;
-        snap.forEach((d) => {
-          const data = d.data();
-          if (data && data.id) {
-            const cid = cleanId(data.id);
-            if (state.allProfiles[cid]?.pubKeyJwk?.x !== data.pubKeyJwk?.x) pubKeyChanged = true;
-            map[cid] = data;
-          }
-        });
-        state.allProfiles = map;
-        if (map[myId]) {
-          state.myProfile = { ...state.myProfile, ...map[myId] };
-          saveRememberedProfile(state.myProfile);
-          renderProfile();
-        }
-        if (pubKeyChanged) {
-          state.e2ee.sharedKeys.clear();
-          await retryPendingDecrypts();
-        }
-        scheduleContactsRender();
-        if (state.activeChatId) {
-          const cv = getContactView(state.activeChatId);
-          setAvatar($('chat-peer-avatar'), cv.avatar, cv.name);
-          $('chat-peer-name').textContent = cv.name;
-          updateChatHeaderStatus(cv);
-        }
-      }, (err) => console.warn('profiles listener:', err)));
-
-      // 2. Friendships
-      state.unsubs.push(onSnapshot(pubCol('friendships'), (snap) => {
-        const set = new Set();
-        snap.forEach((d) => {
-          const data = d.data();
-          if (data && Array.isArray(data.members) && data.members.includes(myId)) {
-            const other = data.members.find((m) => m !== myId);
-            if (other) set.add(cleanId(other));
-          }
-        });
-        state.friendIds = set;
-        scheduleContactsRender();
-      }, (err) => console.warn('friendships listener:', err)));
-
-      // 3. Contact Meta (Custom nicknames & photos)
-      state.unsubs.push(onSnapshot(pubCol('contactMeta'), (snap) => {
-        const map = {};
-        snap.forEach((d) => {
-          const data = d.data();
-          if (data && data.ownerId === myId && data.contactId) {
-            map[cleanId(data.contactId)] = data;
-          }
-        });
-        state.contactMeta = map;
-        scheduleContactsRender();
-        if (state.activeChatId) {
-          const cv = getContactView(state.activeChatId);
-          setAvatar($('chat-peer-avatar'), cv.avatar, cv.name);
-          $('chat-peer-name').textContent = cv.name;
-        }
-      }, (err) => console.warn('contactMeta listener:', err)));
-
-      // 4. Friend Requests
-      state.unsubs.push(onSnapshot(pubCol('requests'), (snap) => {
-        const inc = [], out = [];
-        snap.forEach((d) => {
-          const data = { _docId: d.id, ...d.data() };
-          if (data.status !== 'pending') return;
-          if (data.toId === myId) inc.push(data);
-          else if (data.fromId === myId) out.push(data);
-        });
-        state.incomingRequests = inc.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        state.sentRequests = out.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        renderRequests();
-      }, (err) => console.warn('requests listener:', err)));
-
-      // 5. Messages (Incremental docChanges + E2EE Cache + Real-Time Delivery & Read Receipts)
-      state.unsubs.push(onSnapshot(pubCol('messages'), async (snap) => {
-        const touchedPeers = new Set();
-        const tasks = [];
-        const toDeliverIds = [];
-        const toReadIds = [];
-
-        snap.docChanges().forEach((chg) => {
-          const id = chg.doc.id;
-          if (chg.type === 'removed') {
-            const prev = state.rawMsgById.get(id);
-            if (prev) {
-              const pid = prev.fromId === myId ? prev.toId : prev.fromId;
-              touchedPeers.add(pid);
-              state.rawMsgById.delete(id);
-              state.decryptedCache.delete(id);
-            }
-            return;
-          }
-          const raw = { _docId: id, ...chg.doc.data() };
-          if (raw.fromId !== myId && raw.toId !== myId) return;
-          const pid = raw.fromId === myId ? raw.toId : raw.fromId;
-          touchedPeers.add(pid);
-
-          // Automatically acknowledge delivery & read status for incoming messages
-          if (raw.toId === myId) {
-            if (state.activeChatId === raw.fromId && !document.hidden) {
-              if (!raw.read || !raw.delivered) {
-                raw.delivered = true;
-                raw.read = true;
-                toReadIds.push(id);
-              }
-            } else if (!raw.delivered) {
-              raw.delivered = true;
-              toDeliverIds.push(id);
-            }
-          }
-
-          state.rawMsgById.set(id, raw);
-          tasks.push(decryptMessageDoc(raw, pid));
-        });
-
-        if (toDeliverIds.length || toReadIds.length) {
-          commitReceiptUpdates(toDeliverIds, toReadIds);
-        }
-
-        if (touchedPeers.size === 0) return;
-        await Promise.all(tasks);
-        rebuildMessagesForPeers(touchedPeers);
-      }, (err) => console.warn('messages listener:', err)));
-
-      // 6. Typing Indicators
-      state.unsubs.push(onSnapshot(pubCol('typing'), (snap) => {
-        const map = {};
-        snap.forEach((d) => {
-          const data = d.data();
-          if (data && data.toId === myId && data.fromId) {
-            map[cleanId(data.fromId)] = data.ts || 0;
-          }
-        });
-        state.typingMap = map;
-        if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
-      }, (err) => console.warn('typing listener:', err)));
-
-      // 7. Calls (Incoming Ringing + History)
-      state.unsubs.push(onSnapshot(pubCol('calls'), (snap) => {
-        const hist = [];
-        snap.forEach((d) => {
-          const c = { _docId: d.id, ...d.data() };
-          if (c.callerId !== myId && c.calleeId !== myId) return;
-          hist.push(c);
-          if (c.calleeId === myId && c.status === 'ringing' && state.call.status === 'IDLE' && Date.now() - (c.ts || 0) < 45000) {
-            handleIncomingCallDoc(c);
-          }
-        });
-        state.callHistory = hist.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 40);
-        renderCallHistory();
-      }, (err) => console.warn('calls listener:', err)));
-    }
-
-    /* ---------- 8. MESSAGE CACHE, RECEIPTS & RENDERING ---------- */
-    async function commitReceiptUpdates(deliverIds, readIds) {
-      if (!db || !state.fbUser) return;
+      const list = state.messagesByPeer[cleanId(peerId)] || [];
+      const unreadIds = list.filter((m) => m.fromId !== myId && !m.read && m._docId).map((m) => m._docId);
+      if (!unreadIds.length) return;
+      unreadIds.forEach((id) => {
+        const raw = state.rawMsgById.get(id);
+        if (raw) { raw.read = true; raw.delivered = true; }
+      });
       try {
-        const ops = [];
-        deliverIds.forEach((id) => ops.push({ id, patch: { delivered: true } }));
-        readIds.forEach((id) => ops.push({ id, patch: { delivered: true, read: true } }));
-        for (let i = 0; i < ops.length; i += 400) {
+        for (let i = 0; i < unreadIds.length; i += 400) {
           const batch = writeBatch(db);
-          ops.slice(i, i + 400).forEach((o) => batch.update(pubDoc('messages', o.id), o.patch));
+          unreadIds.slice(i, i + 400).forEach((id) => batch.update(pubDoc('messages', id), { read: true, delivered: true }));
           await batch.commit();
         }
       } catch (e) {}
     }
 
-    async function markChatAsRead(fid) {
-      if (!fid || !state.myProfile) return;
-      const cid = cleanId(fid);
-      const myId = state.myProfile.id;
-      const unreadIds = [];
-      state.rawMsgById.forEach((raw, id) => {
-        if (raw.fromId === cid && raw.toId === myId && (!raw.read || !raw.delivered)) {
-          raw.delivered = true;
-          raw.read = true;
-          unreadIds.push(id);
-        }
-      });
-      if (!unreadIds.length) return;
-      rebuildMessagesForPeers(new Set([cid]));
-      await commitReceiptUpdates([], unreadIds);
-    }
-
-    function rebuildMessagesForPeers(peerSet) {
+    async function rebuildMessagesForPeers(peerIds) {
       if (!state.myProfile) return;
       const myId = state.myProfile.id;
-      peerSet.forEach((pid) => { state.messagesByPeer[pid] = []; });
-      state.rawMsgById.forEach((raw) => {
-        const pid = raw.fromId === myId ? raw.toId : raw.fromId;
-        if (!peerSet.has(pid)) return;
-        let dec;
-        if (raw.e2ee) {
-          const cached = state.decryptedCache.get(raw._docId);
-          dec = cached
-            ? { ...cached, delivered: !!raw.delivered, read: !!raw.read }
-            : { ...raw, text: '🔒 Unlocking...', _pendingDecrypt: true };
-        } else {
-          dec = raw;
+      const touched = new Set(peerIds);
+      for (const pid of touched) {
+        const docs = [];
+        state.rawMsgById.forEach((raw, docId) => {
+          const p = raw.fromId === myId ? raw.toId : raw.fromId;
+          if (cleanId(p) === pid) docs.push([docId, raw]);
+        });
+        docs.sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
+        const resolved = await Promise.all(docs.map(([id, raw]) => decryptMessageDoc(id, raw)));
+        state.messagesByPeer[pid] = resolved;
+        if (state.activeChatId === pid) {
+          renderMessages(pid);
+          if (!document.hidden) markChatAsRead(pid);
         }
-        state.messagesByPeer[pid].push(dec);
-      });
-      peerSet.forEach((pid) => {
-        state.messagesByPeer[pid].sort((a, b) => (a.ts || 0) - (b.ts || 0));
-      });
-      if (state.activeChatId && peerSet.has(state.activeChatId)) {
-        renderMessages(state.activeChatId);
       }
       scheduleContactsRender();
     }
 
-    async function retryPendingDecrypts() {
-      if (!state.myProfile) return;
-      const myId = state.myProfile.id;
-      const touched = new Set();
-      const jobs = [];
-      state.rawMsgById.forEach((raw) => {
-        if (!raw.e2ee || state.decryptedCache.has(raw._docId)) return;
-        const pid = raw.fromId === myId ? raw.toId : raw.fromId;
-        touched.add(pid);
-        jobs.push(decryptMessageDoc(raw, pid));
-      });
-      if (jobs.length === 0) return;
-      await Promise.all(jobs);
-      rebuildMessagesForPeers(touched);
+    function stopFirestoreListeners() {
+      state.unsubs.forEach((u) => { try { u(); } catch (e) {} });
+      state.unsubs = [];
+      if (state.presenceTimer) { clearInterval(state.presenceTimer); state.presenceTimer = null; }
+      state.listenersStarted = false;
     }
 
+    function startFirestoreListeners() {
+      if (state.listenersStarted || !db || !state.fbUser || !state.myProfile) return;
+      state.listenersStarted = true;
+      const myId = state.myProfile.id;
+
+      setPresence(true);
+      state.presenceTimer = setInterval(() => {
+        if (!document.hidden && !state.isLocked) setPresence(true);
+      }, 30000);
+
+      // 1. Profiles
+      state.unsubs.push(onSnapshot(pubCol('profiles'), (snap) => {
+        const keyChangedPeers = [];
+        snap.forEach((d) => {
+          const prev = state.profilesMap[d.id];
+          const next = d.data();
+          state.profilesMap[d.id] = next;
+          if (d.id === myId) {
+            state.myProfile = { ...state.myProfile, ...next };
+            saveRememberedProfile(state.myProfile);
+            renderProfile();
+          } else if (next.pubKeyJwk && (!prev || !prev.pubKeyJwk)) {
+            keyChangedPeers.push(cleanId(d.id));
+          }
+        });
+        if (keyChangedPeers.length) rebuildMessagesForPeers(keyChangedPeers);
+        scheduleContactsRender();
+        if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
+      }));
+
+      // 2. Friendships
+      state.unsubs.push(onSnapshot(pubCol('friendships'), (snap) => {
+        const nextFriends = new Set();
+        snap.forEach((d) => {
+          const mem = d.data()?.members || [];
+          if (mem.includes(myId)) {
+            const other = mem.find((m) => m !== myId);
+            if (other) nextFriends.add(cleanId(other));
+          }
+        });
+        state.friendIds = nextFriends;
+        scheduleContactsRender();
+      }));
+
+      // 3. Contact Meta (custom nicknames & photos)
+      state.unsubs.push(onSnapshot(pubCol('contactMeta'), (snap) => {
+        const nextMeta = {};
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data && data.ownerId === myId && data.contactId) {
+            nextMeta[cleanId(data.contactId)] = data;
+          }
+        });
+        state.contactMeta = nextMeta;
+        scheduleContactsRender();
+        if (state.activeChatId) {
+          const cv = getContactView(state.activeChatId);
+          setAvatar($('chat-peer-avatar'), cv.avatar, cv.name);
+          $('chat-peer-name').textContent = cv.name;
+        }
+      }));
+
+      // 4. Friend Requests
+      state.unsubs.push(onSnapshot(pubCol('requests'), (snap) => {
+        const inc = [], out = [];
+        snap.forEach((d) => {
+          const data = { ...d.data(), _docId: d.id };
+          if (data.status !== 'pending') return;
+          if (cleanId(data.toId) === myId) inc.push(data);
+          else if (cleanId(data.fromId) === myId) out.push(data);
+        });
+        state.incomingRequests = inc.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        state.sentRequests = out.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        renderRequests();
+      }));
+
+      // 5. Typing Indicators
+      state.unsubs.push(onSnapshot(pubCol('typing'), (snap) => {
+        snap.forEach((d) => {
+          const data = d.data();
+          if (data && cleanId(data.toId) === myId && data.fromId) {
+            state.typingMap[cleanId(data.fromId)] = data.ts || 0;
+          }
+        });
+        if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
+      }));
+
+      // 6. Messages (incremental docChanges + delivery receipts)
+      state.unsubs.push(onSnapshot(pubCol('messages'), (snap) => {
+        const touchedPeers = new Set();
+        const toDeliver = [];
+        snap.docChanges().forEach((chg) => {
+          const d = chg.doc;
+          const data = d.data();
+          if (!data || (cleanId(data.fromId) !== myId && cleanId(data.toId) !== myId)) return;
+          const peerId = cleanId(data.fromId) === myId ? cleanId(data.toId) : cleanId(data.fromId);
+          touchedPeers.add(peerId);
+          if (chg.type === 'removed') {
+            state.rawMsgById.delete(d.id);
+            state.decryptedCache.delete(d.id);
+          } else {
+            state.rawMsgById.set(d.id, { ...data, _docId: d.id });
+            if (cleanId(data.toId) === myId && !data.delivered) toDeliver.push(d.id);
+          }
+        });
+        if (toDeliver.length) {
+          const batch = writeBatch(db);
+          toDeliver.slice(0, 400).forEach((id) => batch.update(pubDoc('messages', id), { delivered: true }));
+          batch.commit().catch(() => {});
+        }
+        if (touchedPeers.size) rebuildMessagesForPeers(touchedPeers);
+      }));
+
+      // 7. Calls & Incoming Ringing
+      state.unsubs.push(onSnapshot(pubCol('calls'), (snap) => {
+        const hist = [];
+        const now = Date.now();
+        snap.forEach((d) => {
+          const c = { ...d.data(), _docId: d.id };
+          if (cleanId(c.callerId) !== myId && cleanId(c.calleeId) !== myId) return;
+          hist.push(c);
+          if (
+            cleanId(c.calleeId) === myId &&
+            c.status === 'ringing' &&
+            (now - (c.ts || 0) < 45000) &&
+            state.call.status === 'IDLE'
+          ) {
+            handleIncomingCallDoc(c);
+          }
+        });
+        state.callHistory = hist.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 40);
+        renderCalls();
+      }));
+    }
+
+    /* ---------- 8. UI RENDERERS ---------- */
     function scheduleContactsRender() {
-      if (state.contactsRafId) return;
-      state.contactsRafId = requestAnimationFrame(() => {
-        state.contactsRafId = null;
+      if (state.contactsRenderQueued) return;
+      state.contactsRenderQueued = true;
+      requestAnimationFrame(() => {
+        state.contactsRenderQueued = false;
         renderContacts();
       });
     }
 
-    function getContactView(id) {
-      const cid = cleanId(id);
-      const prof = state.allProfiles[cid] || {};
-      const meta = state.contactMeta[cid] || {};
-      const msgs = state.messagesByPeer[cid] || [];
-      const last = msgs[msgs.length - 1];
-      const unread = msgs.filter((m) => m.fromId === cid && !m.read).length;
-      const online = isPeerOnline(cid);
-
-      let lastMessage = 'Tap to chat';
-      if (last) {
-        if (last.mediaKind === 'photo') lastMessage = '🖼️ Photo';
-        else if (last.mediaKind === 'video') lastMessage = '🎬 Video Clip';
-        else if (last.mediaKind === 'voice') lastMessage = '🎤 Voice Note';
-        else if (last.mediaKind === 'doc') lastMessage = '📄 ' + (last.mediaName || 'Document');
-        else lastMessage = last.text || '';
-      }
-
-      return {
-        id: cid,
-        name: meta.nickname || prof.name || cid,
-        avatar: meta.avatar || prof.avatar || '',
-        online,
-        unread,
-        lastMessage,
-        lastTs: last ? (last.ts || 0) : 0
-      };
-    }
-
     function renderContacts() {
       const list = $('contacts-list');
-      if (!list) return;
-      const q = state.search.toLowerCase();
-      const arr = Array.from(state.friendIds)
-        .map((id) => getContactView(id))
-        .filter((c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
-        .sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0));
+      if (!list || !state.myProfile) return;
+      const myId = state.myProfile.id;
+      const q = state.search.trim().toLowerCase();
 
-      const totalUnread = arr.reduce((sum, c) => sum + c.unread, 0);
-      const bChats = $('badge-chats');
-      if (bChats) {
-        bChats.textContent = totalUnread > 99 ? '99+' : String(totalUnread);
-        bChats.classList.toggle('hidden', totalUnread === 0);
+      let totalUnread = 0;
+      const items = Array.from(state.friendIds).map((fid) => {
+        const cv = getContactView(fid);
+        const msgs = state.messagesByPeer[fid] || [];
+        const last = msgs[msgs.length - 1];
+        const unread = msgs.filter((m) => m.fromId !== myId && !m.read).length;
+        totalUnread += unread;
+        let preview = 'Tap to start encrypted chat';
+        if (last) {
+          if (last.mediaKind === 'photo') preview = '📷 Photo';
+          else if (last.mediaKind === 'video') preview = '🎬 Video Clip';
+          else if (last.mediaKind === 'voice') preview = '🎤 Voice Note';
+          else if (last.mediaKind === 'doc') preview = '📄 ' + (last.mediaName || 'Document');
+          else preview = last.text || '';
+        }
+        return { ...cv, lastTs: last?.ts || 0, preview, unread };
+      }).filter((item) => !q || item.name.toLowerCase().includes(q) || item.id.toLowerCase().includes(q))
+        .sort((a, b) => (b.lastTs - a.lastTs) || a.name.localeCompare(b.name));
+
+      const badge = $('badge-chats');
+      if (badge) {
+        badge.textContent = totalUnread > 99 ? '99+' : String(totalUnread);
+        badge.classList.toggle('hidden', totalUnread === 0);
       }
 
-      const sig = arr.map((c) => `${c.id}|${c.name}|${c.online ? 1 : 0}|${c.unread}|${c.lastTs}|${c.lastMessage}|${c.avatar ? c.avatar.length : 0}`).join(';;');
-      if (sig === state.lastContactsSig && list.childElementCount > 0) return;
+      const sig = JSON.stringify(items.map((i) => [i.id, i.name, i.avatar.length, i.online, i.lastTs, i.unread, i.preview]));
+      if (sig === state.lastContactsSig) return;
       state.lastContactsSig = sig;
-      list.innerHTML = '';
 
-      if (arr.length === 0) {
-        list.innerHTML = `<div class="glass empty-state">No family members connected yet.<br/>Open the <b style="color:#38bdf8;">Requests</b> tab to add someone via Family ID.</div>`;
+      list.innerHTML = '';
+      if (!items.length) {
+        list.innerHTML = `<div class="glass empty-state">No family contacts yet.<br/>Open the <strong>Requests</strong> tab to share your Family ID or add someone!</div>`;
         return;
       }
 
-      arr.forEach((c) => {
+      items.forEach((c) => {
         const card = document.createElement('div');
         card.className = 'contact-card';
         card.dataset.openChat = c.id;
         card.innerHTML = `
-          <div style="position:relative;flex-shrink:0;">
-            <div class="avatar">${c.avatar ? `<img src="${c.avatar}" alt="" />` : esc(initials(c.name))}</div>
+          <div class="avatar" style="width:46px;height:46px;">
+            ${c.avatar ? `<img src="${c.avatar}" alt="" />` : esc(initials(c.name))}
             <span class="presence-dot ${c.online ? 'online' : ''}"></span>
           </div>
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <div style="font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.name)}</div>
-              <div style="font-size:10.5px;color:#64748b;flex-shrink:0;">${esc(fmtTime(c.lastTs))}</div>
+              <span style="font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.name)}</span>
+              <span class="mono" style="font-size:10.5px;color:#64748b;flex-shrink:0;">${c.lastTs ? esc(fmtTime(c.lastTs)) : ''}</span>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px;">
-              <div style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.lastMessage)}</div>
-              ${c.unread > 0 ? `<span style="min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:#38bdf8;color:#040814;font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center;">${c.unread}</span>` : ''}
+              <span style="font-size:12px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.preview)}</span>
+              ${c.unread > 0 ? `<span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#38bdf8;color:#040814;font-size:10.5px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${c.unread}</span>` : ''}
             </div>
           </div>
         `;
@@ -2452,32 +2539,34 @@
     function renderRequests() {
       const incList = $('incoming-requests-list');
       const outList = $('outgoing-requests-list');
-      const incCount = state.incomingRequests.length;
-      if ($('incoming-count-pill')) $('incoming-count-pill').textContent = String(incCount);
-      const badge = $('badge-requests');
-      if (badge) {
-        badge.textContent = String(incCount);
-        badge.classList.toggle('hidden', incCount === 0);
+      const pill = $('incoming-count-pill');
+      const navBadge = $('badge-requests');
+      const inc = state.incomingRequests;
+      const out = state.sentRequests;
+
+      if (pill) pill.textContent = String(inc.length);
+      if (navBadge) {
+        navBadge.textContent = String(inc.length);
+        navBadge.classList.toggle('hidden', inc.length === 0);
       }
 
       if (incList) {
         incList.innerHTML = '';
-        if (incCount === 0) {
+        if (!inc.length) {
           incList.innerHTML = `<div class="glass empty-state" style="padding:16px;">No incoming requests</div>`;
         } else {
-          state.incomingRequests.forEach((r) => {
-            const p = state.allProfiles[r.fromId] || {};
+          inc.forEach((r) => {
             const row = document.createElement('div');
             row.className = 'glass';
             row.style.cssText = 'border-radius:16px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
             row.innerHTML = `
               <div style="min-width:0;">
-                <div style="font-size:14px;font-weight:800;">${esc(p.name || r.fromName || r.fromId)}</div>
+                <div style="font-size:14px;font-weight:800;">${esc(r.fromName || r.fromId)}</div>
                 <div class="mono" style="font-size:11px;color:#38bdf8;">${esc(r.fromId)}</div>
               </div>
-              <div style="display:flex;gap:6px;flex-shrink:0;">
-                <button type="button" data-accept-req="${esc(r._docId)}" data-from-id="${esc(r.fromId)}" class="btn btn-emerald" style="padding:7px 11px;font-size:11.5px;">Accept</button>
-                <button type="button" data-decline-req="${esc(r._docId)}" class="btn btn-danger" style="padding:7px 10px;font-size:11.5px;">✕</button>
+              <div style="display:flex;gap:7px;flex-shrink:0;">
+                <button type="button" data-accept-req="${esc(r._docId)}" data-from-id="${esc(r.fromId)}" class="btn btn-emerald" style="padding:7px 12px;font-size:11.5px;">Accept</button>
+                <button type="button" data-decline-req="${esc(r._docId)}" class="btn btn-danger" style="padding:7px 10px;font-size:11.5px;">Decline</button>
               </div>
             `;
             incList.appendChild(row);
@@ -2487,19 +2576,19 @@
 
       if (outList) {
         outList.innerHTML = '';
-        if (state.sentRequests.length === 0) {
-          outList.innerHTML = `<div class="glass empty-state" style="padding:16px;">No pending sent requests</div>`;
+        if (!out.length) {
+          outList.innerHTML = `<div class="glass empty-state" style="padding:16px;">No outgoing pending requests</div>`;
         } else {
-          state.sentRequests.forEach((r) => {
+          out.forEach((r) => {
             const row = document.createElement('div');
             row.className = 'glass';
             row.style.cssText = 'border-radius:16px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
             row.innerHTML = `
               <div>
-                <div class="mono" style="font-size:13.5px;font-weight:800;color:#7dd3fc;">${esc(r.toId)}</div>
-                <div style="font-size:11px;color:#94a3b8;">Waiting for acceptance</div>
+                <div class="mono" style="font-size:13.5px;font-weight:800;color:#e2e8f0;">${esc(r.toId)}</div>
+                <div style="font-size:10.5px;color:#94a3b8;margin-top:2px;">PENDING</div>
               </div>
-              <button type="button" data-cancel-req="${esc(r._docId)}" class="btn btn-ghost" style="padding:6px 11px;font-size:11.5px;color:#fda4af;">Cancel</button>
+              <button type="button" data-cancel-req="${esc(r._docId)}" class="btn btn-danger" style="padding:6px 11px;font-size:11.5px;">Cancel</button>
             `;
             outList.appendChild(row);
           });
@@ -2507,11 +2596,11 @@
       }
     }
 
-    function renderCallHistory() {
+    function renderCalls() {
       const list = $('calls-list');
       if (!list || !state.myProfile) return;
       list.innerHTML = '';
-      if (state.callHistory.length === 0) {
+      if (!state.callHistory.length) {
         list.innerHTML = `<div class="glass empty-state">No recent calls yet.</div>`;
         return;
       }
@@ -2520,20 +2609,38 @@
         const isOut = c.callerId === myId;
         const peerId = isOut ? c.calleeId : c.callerId;
         const cv = getContactView(peerId);
-        const icon = c.isVideo ? '📹' : '📞';
-        const dir = isOut ? '↗ Outgoing' : '↙ Incoming';
+        const isMissed = ['missed', 'declined', 'cancelled'].includes(c.status);
+        const dirText = isOut ? 'Outgoing' : 'Incoming';
+        const dirColor = isMissed ? '#fda4af' : (isOut ? '#38bdf8' : '#34d399');
+        const arrowSvg = isOut
+          ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${dirColor}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>`
+          : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${dirColor}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>`;
+        const typeSvg = c.isVideo
+          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2.5"/></svg>`
+          : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+        const badgeCls = isMissed ? 'missed' : (c.isVideo ? 'video' : 'audio');
+
         const row = document.createElement('div');
         row.className = 'glass';
         row.style.cssText = 'border-radius:16px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
         row.innerHTML = `
           <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-            <div class="avatar" style="width:40px;height:40px;font-size:13px;">${cv.avatar ? `<img src="${cv.avatar}" alt="" />` : esc(initials(cv.name))}</div>
+            <div class="avatar" style="width:42px;height:42px;font-size:13px;">${cv.avatar ? `<img src="${cv.avatar}" alt="" />` : esc(initials(cv.name))}</div>
             <div style="min-width:0;">
               <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(cv.name)}</div>
-              <div style="font-size:11px;color:#94a3b8;">${icon} ${dir} • ${esc(c.status || 'ended')} • ${esc(fmtTime(c.ts))}</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;margin-top:2px;">
+                ${arrowSvg}
+                <span style="color:${dirColor};font-weight:700;">${dirText}</span>
+                <span>•</span>
+                <span>${esc(c.status || 'ended')}</span>
+                <span>•</span>
+                <span>${esc(fmtTime(c.ts))}</span>
+              </div>
             </div>
           </div>
-          <button type="button" data-callback-id="${esc(peerId)}" data-callback-video="${c.isVideo ? '1' : '0'}" class="btn btn-cyan" style="padding:7px 11px;font-size:11.5px;flex-shrink:0;">Call</button>
+          <button type="button" data-callback-id="${esc(peerId)}" data-callback-video="${c.isVideo ? '1' : '0'}" class="call-log-badge ${badgeCls}" title="${c.isVideo ? 'Video Call' : 'Audio Call'}">
+            ${typeSvg}
+          </button>
         `;
         list.appendChild(row);
       });
@@ -2816,11 +2923,23 @@
       if (!state.activeChatId || state.voice.recorder) return;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
-        const rec = mime ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 24000 }) : new MediaRecorder(stream);
-        state.voice = { recorder: rec, chunks: [], stream, startTs: Date.now(), timerId: null };
-        rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) state.voice.chunks.push(ev.data); };
-        rec.start();
+        const candidates = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4',
+          'audio/ogg;codecs=opus'
+        ];
+        const mime = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported)
+          ? (candidates.find((m) => MediaRecorder.isTypeSupported(m)) || '')
+          : '';
+        const opts = mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : {};
+        const rec = new MediaRecorder(stream, opts);
+        const localChunks = [];
+        state.voice = { recorder: rec, chunks: localChunks, stream, startTs: Date.now(), timerId: null };
+        rec.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) localChunks.push(ev.data);
+        };
+        rec.start(250);
         $('voice-hud').classList.remove('hidden');
         $('voice-timer').textContent = '0:00';
         state.voice.timerId = setInterval(() => {
@@ -2838,6 +2957,7 @@
       if (!v.recorder) return;
       const rec = v.recorder;
       const stream = v.stream;
+      const recordedChunks = v.chunks;
       const dur = Math.max(1, Math.round((Date.now() - v.startTs) / 1000));
       const targetId = state.activeChatId;
       if (v.timerId) clearInterval(v.timerId);
@@ -2846,19 +2966,30 @@
 
       rec.onstop = async () => {
         if (stream) stream.getTracks().forEach((t) => t.stop());
-        if (cancel || !v.chunks.length || !targetId) return;
-        const blob = new Blob(v.chunks, { type: rec.mimeType || 'audio/webm' });
+        if (cancel || !targetId) return;
+        if (!recordedChunks.length) {
+          toast('Voice note was too short — try again', 'error');
+          return;
+        }
+        const mimeType = rec.mimeType || recordedChunks[0].type || 'audio/webm';
+        const ext = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const blob = new Blob(recordedChunks, { type: mimeType });
         const dataUrl = await readFileAsDataUrl(blob);
         await sendSparkMedia(targetId, 'voice', dataUrl, {
-          name: 'voice-note.webm', mime: blob.type, size: blob.size, duration: dur
+          name: 'voice-note.' + ext, mime: mimeType, size: blob.size, duration: dur
         });
       };
-      try { if (rec.state !== 'inactive') rec.stop(); } catch (e) {}
+      try {
+        if (rec.state !== 'inactive') {
+          if (typeof rec.requestData === 'function') rec.requestData();
+          rec.stop();
+        }
+      } catch (e) {}
     }
 
-    /* ---------- 11. WEBRTC AUDIO/VIDEO CALLING & BLUETOOTH ROUTING ---------- */
+    /* ---------- 11. WEBRTC AUDIO / VIDEO CALLING & BLUETOOTH ROUTING ---------- */
     function getIceServers() {
-      const list = [
+      const servers = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' }
@@ -2867,49 +2998,33 @@
         const entry = { urls: state.customTurn.url };
         if (state.customTurn.username) entry.username = state.customTurn.username;
         if (state.customTurn.credential) entry.credential = state.customTurn.credential;
-        list.push(entry);
+        servers.push(entry);
       }
-      return list;
+      return servers;
     }
 
-    const BT_REGEX = /bluetooth|airpods|galaxy buds|pixel buds|earbuds|hands-free|handsfree|bose|sony wh|sony wf|jbl|beats|\bbt\b/i;
-    const NON_BT_REGEX = /earpiece|speakerphone|built-in|internal|wired|analog|hdmi|displayport/i;
-
     function isRealBluetoothLabel(label) {
-      const s = String(label || '').trim();
-      if (!s) return false;
-      if (NON_BT_REGEX.test(s) && !/bluetooth|airpods|buds/i.test(s)) return false;
-      return BT_REGEX.test(s);
+      const l = String(label || '').trim();
+      if (!l) return false;
+      if (/^(default|communications|speakerphone|earpiece|headset earpiece|built-in|internal|phone|wired)/i.test(l)) return false;
+      return /(bluetooth|airpods|buds|galaxy buds|pixel buds|beats|jbl|bose|sony|wh-|wf-|oneplus|boat|anker|soundcore|jabra|sennheiser|hands-free|handsfree|a2dp|hfp|bt\b)/i.test(l);
     }
 
     async function detectBluetoothAudio() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      if (!navigator.mediaDevices?.enumerateDevices) return;
       try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const activeMicLabel = state.call.localStream?.getAudioTracks?.()?.[0]?.label || '';
-        const btOut = devices.find((d) => d.kind === 'audiooutput' && isRealBluetoothLabel(d.label));
-        const btIn = devices.find((d) => d.kind === 'audioinput' && isRealBluetoothLabel(d.label));
-
-        let foundLabel = '';
-        if (btOut) foundLabel = btOut.label;
-        else if (isRealBluetoothLabel(activeMicLabel)) foundLabel = activeMicLabel;
-        else if (btIn && state.call.status !== 'IDLE') foundLabel = btIn.label;
-
-        state.call.btDeviceName = foundLabel
-          ? (foundLabel.replace(/^default\s*-\s*/i, '').replace(/\s*\([^)]*\)\s*/g, '').trim() || 'Bluetooth Audio')
-          : '';
-        if (state.call.status !== 'IDLE') {
-          updateCallUI();
-          if (state.call.btDeviceName && !state.call.speakerOn) applyAudioOutput();
-        }
+        const devs = await navigator.mediaDevices.enumerateDevices();
+        const bt = devs.find((d) => (d.kind === 'audiooutput' || d.kind === 'audioinput') && isRealBluetoothLabel(d.label));
+        state.call.btDeviceName = bt ? bt.label.replace(/\(Bluetooth\)/i, '').trim() : '';
+        if (state.call.status !== 'IDLE') updateCallUI();
       } catch (e) {}
     }
 
-    async function applyAudioOutput() {
+    async function applyAudioOutput(userInitiated = false) {
       const audioEl = $('remote-audio');
       const videoEl = $('remote-video');
       const c = state.call;
-      // Keep remote-video strictly muted so all call sound routes through #remote-audio (prevents speaker leak on Bluetooth)
+      // Keep remote-video strictly muted so all call sound routes through #remote-audio
       if (videoEl) videoEl.muted = true;
       if (audioEl) {
         audioEl.muted = false;
@@ -2925,11 +3040,24 @@
               || outs.find((d) => /earpiece|headphone|communications/i.test(d.label || ''))
               || outs.find((d) => d.deviceId === 'default');
           } else {
-            target = outs.find((d) => /speaker/i.test(d.label || '') && !isRealBluetoothLabel(d.label))
-              || outs.find((d) => d.deviceId === 'default');
+            // Explicitly look for built-in phone speaker (strictly excluding Bluetooth)
+            target = outs.find((d) => /speakerphone|speaker|built-in|internal|phone/i.test(d.label || '') && !isRealBluetoothLabel(d.label))
+              || outs.find((d) => d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications' && !isRealBluetoothLabel(d.label));
+
+            // If Bluetooth is active and browser hides built-in speaker, prompt native output picker on user click
+            if (!target && userInitiated && c.btDeviceName && typeof navigator.mediaDevices.selectAudioOutput === 'function') {
+              try {
+                const picked = await navigator.mediaDevices.selectAudioOutput();
+                if (picked && picked.deviceId) target = picked;
+              } catch (pickErr) {}
+            }
+            if (!target) target = outs.find((d) => d.deviceId === 'default');
           }
           if (target && target.deviceId) {
             await audioEl.setSinkId(target.deviceId).catch(() => {});
+          }
+          if (userInitiated && c.speakerOn && c.btDeviceName && (!target || target.deviceId === 'default' || isRealBluetoothLabel(target.label))) {
+            toast('Android Chrome locks Bluetooth audio — switch to Phone Speaker from your Bluetooth/Volume panel if needed', 'info');
           }
         } catch (e) {}
       }
@@ -3902,21 +4030,107 @@
       on('photo-picker', 'change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const dataUrl = await compressImageFile(file, 260, 0.78);
-        if (state.photoPickerMode === 'setup') {
-          state.setupPhotoData = dataUrl;
-          setAvatar($('setup-avatar-preview'), dataUrl, $('setup-name').value);
-          $('btn-setup-photo-remove').classList.remove('hidden');
-        } else if (state.photoPickerMode === 'profile' && state.myProfile && db) {
-          state.myProfile.avatar = dataUrl;
-          saveRememberedProfile(state.myProfile);
-          await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: dataUrl }).catch(() => {});
-          renderProfile();
-          toast('Profile photo updated!', 'success');
-        } else if (state.photoPickerMode === 'contact') {
-          state.editContactPhotoData = dataUrl;
-          setAvatar($('edit-contact-avatar'), dataUrl, $('input-contact-nickname').value);
-        }
+        openPhotoCropper(file, async (croppedDataUrl) => {
+          if (state.photoPickerMode === 'setup') {
+            state.setupPhotoData = croppedDataUrl;
+            setAvatar($('setup-avatar-preview'), croppedDataUrl, $('setup-name').value);
+            $('btn-setup-photo-remove').classList.remove('hidden');
+          } else if (state.photoPickerMode === 'profile' && state.myProfile && db) {
+            state.myProfile.avatar = croppedDataUrl;
+            saveRememberedProfile(state.myProfile);
+            await updateDoc(pubDoc('profiles', state.myProfile.id), { avatar: croppedDataUrl }).catch(() => {});
+            renderProfile();
+            toast('Profile photo updated!', 'success');
+          } else if (state.photoPickerMode === 'contact') {
+            state.editContactPhotoData = croppedDataUrl;
+            setAvatar($('edit-contact-avatar'), croppedDataUrl, $('input-contact-nickname').value);
+          }
+        });
+      });
+
+      // Interactive Square/Circle Profile Photo Cropper
+      const cropState = { img: null, zoom: 1, x: 0, y: 0, baseScale: 1, dragging: false, sx: 0, sy: 0, ox: 0, oy: 0, onDone: null };
+      function drawCropCanvas() {
+        const canvas = $('crop-canvas');
+        if (!canvas || !cropState.img) return;
+        const ctx = canvas.getContext('2d');
+        const size = canvas.width;
+        ctx.clearRect(0, 0, size, size);
+        ctx.fillStyle = '#020612';
+        ctx.fillRect(0, 0, size, size);
+
+        const scale = cropState.baseScale * cropState.zoom;
+        const dw = cropState.img.width * scale;
+        const dh = cropState.img.height * scale;
+        const maxX = Math.max(0, (dw - size) / 2);
+        const maxY = Math.max(0, (dh - size) / 2);
+        cropState.x = Math.min(maxX, Math.max(-maxX, cropState.x));
+        cropState.y = Math.min(maxY, Math.max(-maxY, cropState.y));
+
+        const dx = (size - dw) / 2 + cropState.x;
+        const dy = (size - dh) / 2 + cropState.y;
+        ctx.drawImage(cropState.img, dx, dy, dw, dh);
+      }
+      function openPhotoCropper(file, onDone) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const size = 260;
+            cropState.img = img;
+            cropState.baseScale = Math.max(size / img.width, size / img.height);
+            cropState.zoom = 1;
+            cropState.x = 0;
+            cropState.y = 0;
+            cropState.onDone = onDone;
+            $('crop-zoom').value = '1';
+            $('photo-crop-modal').classList.remove('hidden');
+            drawCropCanvas();
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      on('crop-zoom', 'input', (e) => {
+        cropState.zoom = parseFloat(e.target.value) || 1;
+        drawCropCanvas();
+      });
+      const cropStage = $('crop-stage');
+      if (cropStage) {
+        cropStage.addEventListener('pointerdown', (e) => {
+          cropState.dragging = true;
+          cropState.sx = e.clientX; cropState.sy = e.clientY;
+          cropState.ox = cropState.x; cropState.oy = cropState.y;
+          try { cropStage.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        cropStage.addEventListener('pointermove', (e) => {
+          if (!cropState.dragging) return;
+          cropState.x = cropState.ox + (e.clientX - cropState.sx);
+          cropState.y = cropState.oy + (e.clientY - cropState.sy);
+          drawCropCanvas();
+        });
+        const stopCropDrag = (e) => {
+          cropState.dragging = false;
+          try { cropStage.releasePointerCapture(e.pointerId); } catch (err) {}
+        };
+        cropStage.addEventListener('pointerup', stopCropDrag);
+        cropStage.addEventListener('pointercancel', stopCropDrag);
+      }
+      on('btn-crop-cancel', 'click', () => {
+        $('photo-crop-modal').classList.add('hidden');
+        cropState.img = null; cropState.onDone = null;
+      });
+      on('btn-crop-apply', 'click', async () => {
+        const canvas = $('crop-canvas');
+        const cb = cropState.onDone;
+        if (!canvas || !cb) return;
+        const out = document.createElement('canvas');
+        out.width = 300; out.height = 300;
+        out.getContext('2d').drawImage(canvas, 0, 0, 300, 300);
+        const dataUrl = out.toDataURL('image/jpeg', 0.82);
+        $('photo-crop-modal').classList.add('hidden');
+        cropState.img = null; cropState.onDone = null;
+        await cb(dataUrl);
       });
 
       // Chat View Controls
@@ -4105,9 +4319,9 @@
       on('btn-call-speaker', 'click', async () => {
         const c = state.call;
         c.speakerOn = !c.speakerOn;
-        await applyAudioOutput();
+        await applyAudioOutput(true);
         updateCallUI();
-        toast(c.speakerOn ? 'Speaker ON' : 'Earpiece / Standard Audio', 'info');
+        toast(c.speakerOn ? 'Speaker ON' : (c.btDeviceName ? 'Bluetooth Audio' : 'Earpiece / Standard Audio'), 'info');
       });
       on('btn-call-switch-mode', 'click', () => {
         const c = state.call;
@@ -4134,6 +4348,15 @@
     function boot() {
       initBrandAndPWA();
       wireEvents();
+
+      // Dismiss animated splash screen smoothly
+      setTimeout(() => {
+        const sp = $('splash-screen');
+        if (sp) {
+          sp.classList.add('fade-out');
+          setTimeout(() => sp.remove(), 480);
+        }
+      }, 1500);
 
       // Pre-fill ?add=FAM-XXXX invite param if present
       const addParam = new URLSearchParams(location.search).get('add');
