@@ -9,7 +9,8 @@
   <meta name="apple-mobile-web-app-title" content="FamCall HUD" />
   <title>FamCall HUD — Family Connect</title>
   <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="" />
-  <link id="dynamic-manifest" rel="manifest" href="" />
+  <link id="apple-touch-icon" rel="apple-touch-icon" href="" />
+  <link id="dynamic-manifest" rel="manifest" href="./manifest.json" />
 
   <!-- =====================================================================
        STEP 1: PASTE YOUR 6 FIREBASE WEB APP VALUES INSIDE THE QUOTES BELOW
@@ -17,7 +18,7 @@
        ===================================================================== -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
-       apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
   authDomain: "miv-reservation-system.firebaseapp.com",
   projectId: "miv-reservation-system",
   storageBucket: "miv-reservation-system.firebasestorage.app",
@@ -1371,7 +1372,7 @@
 
   <!-- ==================== 5. CALL OVERLAY ==================== -->
   <section id="call-overlay" class="hidden">
-    <video id="remote-video" autoplay playsinline class="hidden"></video>
+    <video id="remote-video" autoplay playsinline muted class="hidden"></video>
     <div id="call-video-vignette" class="call-video-vignette hidden"></div>
     <video id="local-video" autoplay playsinline muted class="hidden" title="Drag to move"></video>
     <audio id="remote-audio" autoplay playsinline></audio>
@@ -1688,31 +1689,53 @@
       if ($('dynamic-favicon')) $('dynamic-favicon').href = svgUrl;
       if ($('auth-brand-icon')) $('auth-brand-icon').innerHTML = imgHtml;
       if ($('header-brand-icon')) $('header-brand-icon').innerHTML = imgHtml;
-      try {
-        const manifest = {
-          name: 'FamCall HUD — Family Connect',
-          short_name: 'FamCall',
-          start_url: '.',
-          display: 'standalone',
-          background_color: '#040814',
-          theme_color: '#040814',
-          icons: [{ src: svgUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }]
-        };
-        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-        if ($('dynamic-manifest')) $('dynamic-manifest').href = URL.createObjectURL(blob);
-      } catch (e) {}
+
+      // Render a crisp 512x512 PNG for iOS home screen & fallback manifest
+      const pngImg = new Image();
+      pngImg.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = 512; c.height = 512;
+          c.getContext('2d').drawImage(pngImg, 0, 0, 512, 512);
+          const pngUrl = c.toDataURL('image/png');
+          if ($('apple-touch-icon')) $('apple-touch-icon').href = pngUrl;
+
+          // Keep static ./manifest.json when hosted (required for Chrome WebAPK without badge);
+          // only fall back to dynamic manifest if ./manifest.json is missing.
+          fetch('./manifest.json', { cache: 'no-cache' }).then((res) => {
+            if (res.ok) return;
+            const manifest = {
+              name: 'FamCall HUD — Family Connect',
+              short_name: 'FamCall',
+              start_url: './',
+              scope: './',
+              display: 'standalone',
+              background_color: '#040814',
+              theme_color: '#040814',
+              icons: [{ src: pngUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
+            };
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+            if ($('dynamic-manifest')) $('dynamic-manifest').href = URL.createObjectURL(blob);
+          }).catch(() => {});
+        } catch (e) {}
+      };
+      pngImg.src = svgUrl;
+
+      // Register Service Worker for standalone WebAPK install (no Chrome badge)
+      if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
     }
 
-    /* ---------- 3. TRUE END-TO-END ENCRYPTION (ECDH P-256 + AES-256-GCM) ---------- */
+    /* ---------- 3. END-TO-END ENCRYPTION (ECDH P-256 + AES-256-GCM) ---------- */
     const hasWebCrypto = !!(window.crypto && window.crypto.subtle);
     const textEnc = new TextEncoder();
     const textDec = new TextDecoder();
 
     function u8ToB64(u8) {
       let bin = '';
-      const chunk = 0x8000;
-      for (let i = 0; i < u8.length; i += chunk) {
-        bin += String.fromCharCode.apply(null, u8.subarray(i, i + chunk));
+      for (let i = 0; i < u8.length; i += 0x8000) {
+        bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
       }
       return btoa(bin);
     }
@@ -1722,43 +1745,41 @@
       for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
       return u8;
     }
-    async function derivePinWrapKey(pin, famId) {
+    async function derivePinKey(pin, saltStr) {
       const base = await crypto.subtle.importKey('raw', textEnc.encode(String(pin)), 'PBKDF2', false, ['deriveKey']);
       return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: textEnc.encode('famcall-pin-wrap-v1::' + cleanId(famId)), iterations: 15000, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: textEnc.encode('famcall-e2ee::' + saltStr), iterations: 60000, hash: 'SHA-256' },
         base,
         { name: 'AES-GCM', length: 256 },
         false,
         ['encrypt', 'decrypt']
       );
     }
-    async function wrapPrivateJwk(privJwk, pin, famId) {
-      const wrapKey = await derivePinWrapKey(pin, famId);
+    async function wrapPrivateJwk(jwk, pin, uid) {
+      const k = await derivePinKey(pin, uid);
       const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrapKey, textEnc.encode(JSON.stringify(privJwk)));
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, textEnc.encode(JSON.stringify(jwk)));
       return { iv: u8ToB64(iv), ct: u8ToB64(new Uint8Array(ct)) };
     }
-    async function unwrapPrivateJwk(encObj, pin, famId) {
-      const wrapKey = await derivePinWrapKey(pin, famId);
-      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToU8(encObj.iv) }, wrapKey, b64ToU8(encObj.ct));
+    async function unwrapPrivateJwk(wrapped, pin, uid) {
+      const k = await derivePinKey(pin, uid);
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToU8(wrapped.iv) }, k, b64ToU8(wrapped.ct));
       return JSON.parse(textDec.decode(pt));
     }
     async function ensureUserE2EEKeys(prof, plainPin) {
-      if (!hasWebCrypto || !prof) return;
+      if (!hasWebCrypto || !prof || !prof.id) return;
       try {
-        state.e2ee.sharedKeys.clear();
-        state.e2ee.pairKeys.clear();
-        if (!plainPin) {
-          const cached = JSON.parse(localStorage.getItem(LS_E2EE_JWK_KEY) || 'null');
-          if (cached && cached.id === prof.id && cached.jwk) {
-            state.e2ee.privateKeyJwk = cached.jwk;
-            state.e2ee.privateKey = await crypto.subtle.importKey('jwk', cached.jwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
-            state.e2ee.ready = true;
-          }
-          return;
+        let privJwk = null;
+        if (prof.encPrivKey && plainPin) {
+          try { privJwk = await unwrapPrivateJwk(prof.encPrivKey, plainPin, prof.id); } catch (e) {}
         }
-        if (prof.pubKeyJwk && prof.encPrivKey) {
-          const privJwk = await unwrapPrivateJwk(prof.encPrivKey, plainPin, prof.id);
+        if (!privJwk) {
+          try {
+            const cached = JSON.parse(localStorage.getItem(LS_E2EE_JWK_KEY) || 'null');
+            if (cached && cached.id === prof.id && cached.jwk) privJwk = cached.jwk;
+          } catch (e) {}
+        }
+        if (privJwk) {
           state.e2ee.privateKeyJwk = privJwk;
           state.e2ee.privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
           state.e2ee.ready = true;
@@ -1766,20 +1787,19 @@
           return;
         }
         const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
-        const pubKeyJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
-        const privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
-        const encPrivKey = await wrapPrivateJwk(privJwk, plainPin, prof.id);
-        state.e2ee.privateKeyJwk = privJwk;
+        const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
+        const newPrivJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
         state.e2ee.privateKey = kp.privateKey;
+        state.e2ee.privateKeyJwk = newPrivJwk;
         state.e2ee.ready = true;
-        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
-        prof.pubKeyJwk = pubKeyJwk;
-        prof.encPrivKey = encPrivKey;
+        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: newPrivJwk })); } catch (e) {}
         if (db && state.fbUser) {
-          await updateDoc(pubDoc('profiles', prof.id), { pubKeyJwk, encPrivKey }).catch(() => {});
+          const patch = { pubKeyJwk: pubJwk };
+          if (plainPin) patch.encPrivKey = await wrapPrivateJwk(newPrivJwk, plainPin, prof.id);
+          await updateDoc(pubDoc('profiles', prof.id), patch).catch(() => {});
         }
       } catch (e) {
-        console.warn('E2EE key fallback:', e);
+        console.warn('E2EE key setup skipped:', e);
       }
     }
     async function getPairFallbackKey(peerId) {
@@ -1821,14 +1841,20 @@
     }
     async function decryptMessageDoc(rawDoc, peerId) {
       if (!rawDoc || !rawDoc.e2ee) return rawDoc;
-      if (state.decryptedCache.has(rawDoc._docId)) return state.decryptedCache.get(rawDoc._docId);
+      if (state.decryptedCache.has(rawDoc._docId)) {
+        const cached = state.decryptedCache.get(rawDoc._docId);
+        return { ...cached, delivered: !!rawDoc.delivered, read: !!rawDoc.read };
+      }
       if (!hasWebCrypto) return { ...rawDoc, text: '🔒 Encrypted message' };
       try {
         const derived = await getSharedAesKey(peerId, rawDoc.e2ee);
         if (!derived) return { ...rawDoc, text: '🔒 Unlocking encryption...', _pendingDecrypt: true };
         const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToU8(rawDoc.iv) }, derived.key, b64ToU8(rawDoc.ct));
         const parsed = JSON.parse(textDec.decode(pt));
-        const merged = { _docId: rawDoc._docId, chatId: rawDoc.chatId, fromId: rawDoc.fromId, toId: rawDoc.toId, ts: rawDoc.ts, e2ee: rawDoc.e2ee, ...parsed };
+        const merged = {
+          _docId: rawDoc._docId, chatId: rawDoc.chatId, fromId: rawDoc.fromId, toId: rawDoc.toId,
+          ts: rawDoc.ts, e2ee: rawDoc.e2ee, delivered: !!rawDoc.delivered, read: !!rawDoc.read, ...parsed
+        };
         state.decryptedCache.set(rawDoc._docId, merged);
         return merged;
       } catch (e) {
@@ -1899,12 +1925,18 @@
         startTs: 0,
         timerId: null,
         ringTimeoutId: null,
+        wakeLock: null,
+        keepAliveCtx: null,
         unsubs: []
       }
     };
 
     const pubCol = (name) => collection(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name);
     const pubDoc = (name, id) => doc(db, 'artifacts', APP_NAMESPACE, 'public', 'data', name, id);
+    function isPeerOnline(cid) {
+      const p = state.allProfiles[cleanId(cid)];
+      return !!(p && p.online && Date.now() - (p.lastSeen || 0) < 75000);
+    }
 
     function loadRememberedProfile() {
       try { return JSON.parse(localStorage.getItem(LS_PROFILE_KEY) || 'null'); } catch { return null; }
@@ -2163,24 +2195,24 @@
 
       // 4. Friend Requests
       state.unsubs.push(onSnapshot(pubCol('requests'), (snap) => {
-        const inc = [], snt = [];
+        const inc = [], out = [];
         snap.forEach((d) => {
-          const r = { _docId: d.id, ...d.data() };
-          if (r.status !== 'pending') return;
-          if (r.toId === myId) inc.push(r);
-          else if (r.fromId === myId) snt.push(r);
+          const data = { _docId: d.id, ...d.data() };
+          if (data.status !== 'pending') return;
+          if (data.toId === myId) inc.push(data);
+          else if (data.fromId === myId) out.push(data);
         });
-        inc.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        snt.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        state.incomingRequests = inc;
-        state.sentRequests = snt;
+        state.incomingRequests = inc.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        state.sentRequests = out.sort((a, b) => (b.ts || 0) - (a.ts || 0));
         renderRequests();
       }, (err) => console.warn('requests listener:', err)));
 
-      // 5. Messages (Incremental docChanges + E2EE Cache)
+      // 5. Messages (Incremental docChanges + E2EE Cache + Real-Time Delivery & Read Receipts)
       state.unsubs.push(onSnapshot(pubCol('messages'), async (snap) => {
         const touchedPeers = new Set();
         const tasks = [];
+        const toDeliverIds = [];
+        const toReadIds = [];
 
         snap.docChanges().forEach((chg) => {
           const id = chg.doc.id;
@@ -2198,10 +2230,28 @@
           if (raw.fromId !== myId && raw.toId !== myId) return;
           const pid = raw.fromId === myId ? raw.toId : raw.fromId;
           touchedPeers.add(pid);
+
+          // Automatically acknowledge delivery & read status for incoming messages
+          if (raw.toId === myId) {
+            if (state.activeChatId === raw.fromId && !document.hidden) {
+              if (!raw.read || !raw.delivered) {
+                raw.delivered = true;
+                raw.read = true;
+                toReadIds.push(id);
+              }
+            } else if (!raw.delivered) {
+              raw.delivered = true;
+              toDeliverIds.push(id);
+            }
+          }
+
           state.rawMsgById.set(id, raw);
-          if (chg.type === 'modified') state.decryptedCache.delete(id);
           tasks.push(decryptMessageDoc(raw, pid));
         });
+
+        if (toDeliverIds.length || toReadIds.length) {
+          commitReceiptUpdates(toDeliverIds, toReadIds);
+        }
 
         if (touchedPeers.size === 0) return;
         await Promise.all(tasks);
@@ -2219,28 +2269,56 @@
         });
         state.typingMap = map;
         if (state.activeChatId) updateChatHeaderStatus(getContactView(state.activeChatId));
-      }, () => {}));
+      }, (err) => console.warn('typing listener:', err)));
 
-      // 7. Incoming Calls & Call History
+      // 7. Calls (Incoming Ringing + History)
       state.unsubs.push(onSnapshot(pubCol('calls'), (snap) => {
         const hist = [];
         snap.forEach((d) => {
           const c = { _docId: d.id, ...d.data() };
           if (c.callerId !== myId && c.calleeId !== myId) return;
           hist.push(c);
-          if (c.calleeId === myId && c.status === 'ringing' && Date.now() - (c.ts || 0) < 42000) {
-            if (state.call.status === 'IDLE') {
-              handleIncomingCallDoc(c);
-            }
+          if (c.calleeId === myId && c.status === 'ringing' && state.call.status === 'IDLE' && Date.now() - (c.ts || 0) < 45000) {
+            handleIncomingCallDoc(c);
           }
         });
-        hist.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-        state.callHistory = hist.slice(0, 40);
+        state.callHistory = hist.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 40);
         renderCallHistory();
       }, (err) => console.warn('calls listener:', err)));
     }
 
-    /* ---------- 8. MESSAGE CACHE & RENDERING ---------- */
+    /* ---------- 8. MESSAGE CACHE, RECEIPTS & RENDERING ---------- */
+    async function commitReceiptUpdates(deliverIds, readIds) {
+      if (!db || !state.fbUser) return;
+      try {
+        const ops = [];
+        deliverIds.forEach((id) => ops.push({ id, patch: { delivered: true } }));
+        readIds.forEach((id) => ops.push({ id, patch: { delivered: true, read: true } }));
+        for (let i = 0; i < ops.length; i += 400) {
+          const batch = writeBatch(db);
+          ops.slice(i, i + 400).forEach((o) => batch.update(pubDoc('messages', o.id), o.patch));
+          await batch.commit();
+        }
+      } catch (e) {}
+    }
+
+    async function markChatAsRead(fid) {
+      if (!fid || !state.myProfile) return;
+      const cid = cleanId(fid);
+      const myId = state.myProfile.id;
+      const unreadIds = [];
+      state.rawMsgById.forEach((raw, id) => {
+        if (raw.fromId === cid && raw.toId === myId && (!raw.read || !raw.delivered)) {
+          raw.delivered = true;
+          raw.read = true;
+          unreadIds.push(id);
+        }
+      });
+      if (!unreadIds.length) return;
+      rebuildMessagesForPeers(new Set([cid]));
+      await commitReceiptUpdates([], unreadIds);
+    }
+
     function rebuildMessagesForPeers(peerSet) {
       if (!state.myProfile) return;
       const myId = state.myProfile.id;
@@ -2248,15 +2326,21 @@
       state.rawMsgById.forEach((raw) => {
         const pid = raw.fromId === myId ? raw.toId : raw.fromId;
         if (!peerSet.has(pid)) return;
-        const dec = raw.e2ee ? (state.decryptedCache.get(raw._docId) || { ...raw, text: '🔒 Unlocking...', _pendingDecrypt: true }) : raw;
+        let dec;
+        if (raw.e2ee) {
+          const cached = state.decryptedCache.get(raw._docId);
+          dec = cached
+            ? { ...cached, delivered: !!raw.delivered, read: !!raw.read }
+            : { ...raw, text: '🔒 Unlocking...', _pendingDecrypt: true };
+        } else {
+          dec = raw;
+        }
         state.messagesByPeer[pid].push(dec);
       });
       peerSet.forEach((pid) => {
         state.messagesByPeer[pid].sort((a, b) => (a.ts || 0) - (b.ts || 0));
       });
       if (state.activeChatId && peerSet.has(state.activeChatId)) {
-        const inCount = (state.messagesByPeer[state.activeChatId] || []).filter((m) => m.fromId === state.activeChatId).length;
-        state.readCounts[state.activeChatId] = inCount;
         renderMessages(state.activeChatId);
       }
       scheduleContactsRender();
@@ -2292,11 +2376,10 @@
       const meta = state.contactMeta[cid] || {};
       const msgs = state.messagesByPeer[cid] || [];
       const last = msgs[msgs.length - 1];
-      const inCount = msgs.filter((m) => m.fromId === cid).length;
-      const unread = Math.max(0, inCount - (state.readCounts[cid] || 0));
-      const online = !!(prof.online && Date.now() - (prof.lastSeen || 0) < 75000);
+      const unread = msgs.filter((m) => m.fromId === cid && !m.read).length;
+      const online = isPeerOnline(cid);
 
-      let lastMessage = 'Tap to chat (🔒 E2EE)';
+      let lastMessage = 'Tap to chat';
       if (last) {
         if (last.mediaKind === 'photo') lastMessage = '🖼️ Photo';
         else if (last.mediaKind === 'video') lastMessage = '🎬 Video Clip';
@@ -2500,8 +2583,7 @@
       $('chat-peer-name').textContent = cv.name;
       updateChatHeaderStatus(cv);
 
-      const inCount = (state.messagesByPeer[state.activeChatId] || []).filter((m) => m.fromId === state.activeChatId).length;
-      state.readCounts[state.activeChatId] = inCount;
+      markChatAsRead(state.activeChatId);
       scheduleContactsRender();
 
       $('chat-view').classList.remove('hidden');
@@ -2560,10 +2642,11 @@
     function buildMessageRowEl(m, myId) {
       const fromMe = m.fromId === myId;
       const isSel = state.chatSelectMode && state.selectedMsgIds.has(m._docId);
+      const tickState = m.read ? 'r' : m.delivered ? 'd' : 's';
       const row = document.createElement('div');
       row.className = 'msg-row ' + (fromMe ? 'me' : 'them') + (state.chatSelectMode ? ' selectable' : '') + (isSel ? ' selected' : '');
       row.dataset.msgId = m._docId || '';
-      row.dataset.renderedSig = (m._pendingDecrypt ? 'p' : 'ok') + '|' + (state.chatSelectMode ? 's' : 'n') + '|' + (isSel ? '1' : '0');
+      row.dataset.renderedSig = (m._pendingDecrypt ? 'p' : 'ok') + '|' + tickState + '|' + (state.chatSelectMode ? 's' : 'n') + '|' + (isSel ? '1' : '0');
 
       let bodyHtml = '';
       if (m.mediaKind === 'photo' && m.mediaData) {
@@ -2601,8 +2684,13 @@
           </div>
         `;
       } else {
-        bodyHtml = `<div>${esc(m.text)}</div>`;
+        bodyHtml = `<div>${esc(m.text || '')}</div>`;
       }
+
+      const tickHtml = !fromMe ? ''
+        : tickState === 'r' ? `<span title="Read" style="color:#38bdf8;font-weight:800;letter-spacing:-1px;">✓✓</span>`
+        : tickState === 'd' ? `<span title="Delivered" style="color:#94a3b8;font-weight:700;letter-spacing:-1px;">✓✓</span>`
+        : `<span title="Sent" style="color:#94a3b8;font-weight:700;">✓</span>`;
 
       const checkHtml = state.chatSelectMode ? `<div class="msg-check">${isSel ? '✓' : ''}</div>` : '';
       row.innerHTML = `
@@ -2610,9 +2698,8 @@
         <div class="msg-bubble ${fromMe ? 'me' : 'them'}">
           ${bodyHtml}
           <div class="msg-meta">
-            ${m.e2ee ? `<span title="End-to-End Encrypted" style="color:#34d399;">🔒</span>` : ''}
             <span>${esc(fmtTime(m.ts))}</span>
-            ${fromMe ? `<span style="color:#38bdf8;font-weight:700;">✓✓</span>` : ''}
+            ${tickHtml}
           </div>
         </div>
         ${fromMe ? checkHtml : ''}
@@ -2653,7 +2740,8 @@
       let appendedNew = false;
       list.forEach((m) => {
         const isSel = state.chatSelectMode && state.selectedMsgIds.has(m._docId);
-        const wantSig = (m._pendingDecrypt ? 'p' : 'ok') + '|' + (state.chatSelectMode ? 's' : 'n') + '|' + (isSel ? '1' : '0');
+        const tickState = m.read ? 'r' : m.delivered ? 'd' : 's';
+        const wantSig = (m._pendingDecrypt ? 'p' : 'ok') + '|' + tickState + '|' + (state.chatSelectMode ? 's' : 'n') + '|' + (isSel ? '1' : '0');
         const cur = existingById.get(m._docId);
         if (cur) {
           if (cur.dataset.renderedSig !== wantSig) cur.replaceWith(buildMessageRowEl(m, myId));
@@ -2672,10 +2760,11 @@
       const clean = String(text || '').trim();
       if (!clean || !targetId || !(await waitForFirebase()) || !state.myProfile) return;
       try {
+        const delivered = isPeerOnline(targetId);
         const enc = await encryptMessagePayload(targetId, { text: clean });
         const docBody = enc
-          ? { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), ...enc }
-          : { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, text: clean, ts: Date.now() };
+          ? { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), delivered, read: false, ...enc }
+          : { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, text: clean, ts: Date.now(), delivered, read: false };
         await addDoc(pubCol('messages'), docBody);
       } catch (e) { toast('Message failed to send', 'error'); }
     }
@@ -2687,6 +2776,7 @@
         return;
       }
       try {
+        const delivered = isPeerOnline(targetId);
         const payload = {
           mediaKind: kind,
           mediaData: dataUrl,
@@ -2697,8 +2787,8 @@
         };
         const enc = await encryptMessagePayload(targetId, payload);
         const docBody = enc
-          ? { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), ...enc }
-          : { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), ...payload };
+          ? { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), delivered, read: false, ...enc }
+          : { chatId: makePairId(state.myProfile.id, targetId), fromId: state.myProfile.id, toId: targetId, ts: Date.now(), delivered, read: false, ...payload };
         await addDoc(pubCol('messages'), docBody);
         const lbl = kind === 'photo' ? 'Photo' : kind === 'video' ? 'Video' : kind === 'voice' ? 'Voice note' : 'Document';
         toast(lbl + ' sent (🔒 E2EE)!', 'success');
@@ -2708,14 +2798,14 @@
     }
 
     async function deleteMessageIds(ids) {
-      if (!ids.length || !(await waitForFirebase())) return;
+      if (!ids || !ids.length || !(await waitForFirebase())) return;
       try {
         for (let i = 0; i < ids.length; i += 400) {
           const batch = writeBatch(db);
           ids.slice(i, i + 400).forEach((id) => batch.delete(pubDoc('messages', id)));
           await batch.commit();
         }
-        toast(`Deleted ${ids.length} item${ids.length > 1 ? 's' : ''}`, 'success');
+        toast(`Deleted ${ids.length} item(s)`, 'success');
       } catch (e) {
         toast('Delete failed', 'error');
       }
@@ -2723,76 +2813,95 @@
 
     /* ---------- 10. VOICE NOTE RECORDER ---------- */
     async function startVoiceRecording() {
-      if (!state.activeChatId) return;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast('Microphone not supported in this browser', 'error');
-        return;
-      }
+      if (!state.activeChatId || state.voice.recorder) return;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
         const rec = mime ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 24000 }) : new MediaRecorder(stream);
         state.voice = { recorder: rec, chunks: [], stream, startTs: Date.now(), timerId: null };
-        rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) state.voice.chunks.push(e.data); };
+        rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) state.voice.chunks.push(ev.data); };
         rec.start();
         $('voice-hud').classList.remove('hidden');
         $('voice-timer').textContent = '0:00';
         state.voice.timerId = setInterval(() => {
-          const s = Math.floor((Date.now() - state.voice.startTs) / 1000);
-          $('voice-timer').textContent = fmtDur(s);
-          if (s >= 60) stopVoiceRecording(false);
-        }, 500);
+          const sec = (Date.now() - state.voice.startTs) / 1000;
+          $('voice-timer').textContent = fmtDur(sec);
+          if (sec >= 90) stopVoiceRecording(false);
+        }, 250);
       } catch (e) {
-        toast('Microphone permission denied', 'error');
+        toast('Microphone permission required for voice notes', 'error');
       }
     }
 
-    function stopVoiceRecording(cancel) {
+    function stopVoiceRecording(cancel = false) {
       const v = state.voice;
-      if (v.timerId) { clearInterval(v.timerId); v.timerId = null; }
-      $('voice-hud').classList.add('hidden');
       if (!v.recorder) return;
-      const targetId = state.activeChatId;
+      const rec = v.recorder;
+      const stream = v.stream;
       const dur = Math.max(1, Math.round((Date.now() - v.startTs) / 1000));
-      v.recorder.onstop = async () => {
-        if (v.stream) v.stream.getTracks().forEach((t) => t.stop());
-        if (cancel || !targetId || v.chunks.length === 0) return;
-        const blob = new Blob(v.chunks, { type: v.recorder.mimeType || 'audio/webm' });
+      const targetId = state.activeChatId;
+      if (v.timerId) clearInterval(v.timerId);
+      $('voice-hud').classList.add('hidden');
+      state.voice = { recorder: null, chunks: [], stream: null, startTs: 0, timerId: null };
+
+      rec.onstop = async () => {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        if (cancel || !v.chunks.length || !targetId) return;
+        const blob = new Blob(v.chunks, { type: rec.mimeType || 'audio/webm' });
         const dataUrl = await readFileAsDataUrl(blob);
-        await sendSparkMedia(targetId, 'voice', dataUrl, { name: 'voice-note.webm', mime: blob.type, size: blob.size, duration: dur });
+        await sendSparkMedia(targetId, 'voice', dataUrl, {
+          name: 'voice-note.webm', mime: blob.type, size: blob.size, duration: dur
+        });
       };
-      try { if (v.recorder.state !== 'inactive') v.recorder.stop(); } catch (e) {}
-      state.voice.recorder = null;
+      try { if (rec.state !== 'inactive') rec.stop(); } catch (e) {}
     }
 
-    /* ---------- 11. WEBRTC AUDIO/VIDEO CALLING (DTLS-SRTP E2EE) ---------- */
+    /* ---------- 11. WEBRTC AUDIO/VIDEO CALLING & BLUETOOTH ROUTING ---------- */
     function getIceServers() {
-      const servers = [
+      const list = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun.relay.metered.ca:80' }
+        { urls: 'stun:stun2.l.google.com:19302' }
       ];
       if (state.customTurn && state.customTurn.url) {
-        servers.push({
-          urls: state.customTurn.url,
-          username: state.customTurn.username || '',
-          credential: state.customTurn.credential || ''
-        });
+        const entry = { urls: state.customTurn.url };
+        if (state.customTurn.username) entry.username = state.customTurn.username;
+        if (state.customTurn.credential) entry.credential = state.customTurn.credential;
+        list.push(entry);
       }
-      return servers;
+      return list;
     }
 
-    const BT_REGEX = /bluetooth|airpods|buds|earbuds|headset|hands-free|handsfree|bose|sony|jbl|beats|wireless|\bbt\b/i;
+    const BT_REGEX = /bluetooth|airpods|galaxy buds|pixel buds|earbuds|hands-free|handsfree|bose|sony wh|sony wf|jbl|beats|\bbt\b/i;
+    const NON_BT_REGEX = /earpiece|speakerphone|built-in|internal|wired|analog|hdmi|displayport/i;
+
+    function isRealBluetoothLabel(label) {
+      const s = String(label || '').trim();
+      if (!s) return false;
+      if (NON_BT_REGEX.test(s) && !/bluetooth|airpods|buds/i.test(s)) return false;
+      return BT_REGEX.test(s);
+    }
 
     async function detectBluetoothAudio() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const btOut = devices.find((d) => d.kind === 'audiooutput' && BT_REGEX.test(d.label || ''));
-        const btIn = devices.find((d) => d.kind === 'audioinput' && BT_REGEX.test(d.label || ''));
-        const found = btOut || btIn;
-        state.call.btDeviceName = found ? (found.label.replace(/\s*\([^)]*\)\s*/g, '').trim() || 'Bluetooth Audio') : '';
-        if (state.call.status !== 'IDLE') updateCallUI();
+        const activeMicLabel = state.call.localStream?.getAudioTracks?.()?.[0]?.label || '';
+        const btOut = devices.find((d) => d.kind === 'audiooutput' && isRealBluetoothLabel(d.label));
+        const btIn = devices.find((d) => d.kind === 'audioinput' && isRealBluetoothLabel(d.label));
+
+        let foundLabel = '';
+        if (btOut) foundLabel = btOut.label;
+        else if (isRealBluetoothLabel(activeMicLabel)) foundLabel = activeMicLabel;
+        else if (btIn && state.call.status !== 'IDLE') foundLabel = btIn.label;
+
+        state.call.btDeviceName = foundLabel
+          ? (foundLabel.replace(/^default\s*-\s*/i, '').replace(/\s*\([^)]*\)\s*/g, '').trim() || 'Bluetooth Audio')
+          : '';
+        if (state.call.status !== 'IDLE') {
+          updateCallUI();
+          if (state.call.btDeviceName && !state.call.speakerOn) applyAudioOutput();
+        }
       } catch (e) {}
     }
 
@@ -2800,24 +2909,97 @@
       const audioEl = $('remote-audio');
       const videoEl = $('remote-video');
       const c = state.call;
-      const vol = c.speakerOn ? 1.0 : 0.75;
-      if (audioEl) audioEl.volume = vol;
-      if (videoEl) videoEl.volume = vol;
+      // Keep remote-video strictly muted so all call sound routes through #remote-audio (prevents speaker leak on Bluetooth)
+      if (videoEl) videoEl.muted = true;
+      if (audioEl) {
+        audioEl.muted = false;
+        audioEl.volume = c.speakerOn ? 1.0 : (c.btDeviceName ? 1.0 : 0.78);
+      }
 
       if (audioEl && typeof audioEl.setSinkId === 'function' && navigator.mediaDevices?.enumerateDevices) {
         try {
           const outs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audiooutput');
           let target = null;
           if (!c.speakerOn) {
-            target = outs.find((d) => BT_REGEX.test(d.label || '')) || outs.find((d) => /earpiece|headphone|communications/i.test(d.label || ''));
+            target = outs.find((d) => isRealBluetoothLabel(d.label))
+              || outs.find((d) => /earpiece|headphone|communications/i.test(d.label || ''))
+              || outs.find((d) => d.deviceId === 'default');
           } else {
-            target = outs.find((d) => /speaker/i.test(d.label || '')) || outs.find((d) => d.deviceId === 'default');
+            target = outs.find((d) => /speaker/i.test(d.label || '') && !isRealBluetoothLabel(d.label))
+              || outs.find((d) => d.deviceId === 'default');
           }
           if (target && target.deviceId) {
             await audioEl.setSinkId(target.deviceId).catch(() => {});
           }
         } catch (e) {}
       }
+      if (audioEl && audioEl.srcObject) audioEl.play().catch(() => {});
+    }
+
+    /* Keep voice alive when mobile screen turns off / locks during a call */
+    async function acquireCallKeepAlive(peerName, isVideo) {
+      const c = state.call;
+      // 1. Screen Wake Lock (prevents auto-sleep during calls)
+      try {
+        if ('wakeLock' in navigator && !c.wakeLock) {
+          c.wakeLock = await navigator.wakeLock.request('screen');
+          c.wakeLock.addEventListener('release', () => { c.wakeLock = null; });
+        }
+      } catch (e) {}
+
+      // 2. Media Session API (tells Android/iOS OS this is an active call so background audio stays alive)
+      try {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: peerName || 'Family Call',
+            artist: isVideo ? 'FamCall HUD • Video Call' : 'FamCall HUD • Audio Call',
+            album: 'End-to-End Encrypted'
+          });
+          navigator.mediaSession.playbackState = 'playing';
+          navigator.mediaSession.setActionHandler('pause', () => {
+            if ($('remote-audio')?.srcObject) $('remote-audio').play().catch(() => {});
+          });
+          navigator.mediaSession.setActionHandler('stop', () => endCall('ended'));
+        }
+      } catch (e) {}
+
+      // 3. Ultra-quiet WebAudio keep-alive loop (prevents mobile Chrome from suspending audio thread on screen lock)
+      try {
+        if (!c.keepAliveCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) {
+            const ctx = new AC();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = 1;
+            gain.gain.value = 0.00001;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            c.keepAliveCtx = ctx;
+          }
+        } else if (c.keepAliveCtx.state === 'suspended') {
+          c.keepAliveCtx.resume().catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function releaseCallKeepAlive() {
+      const c = state.call;
+      if (c.wakeLock) {
+        try { c.wakeLock.release(); } catch (e) {}
+        c.wakeLock = null;
+      }
+      if (c.keepAliveCtx) {
+        try { c.keepAliveCtx.close(); } catch (e) {}
+        c.keepAliveCtx = null;
+      }
+      try {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = 'none';
+          navigator.mediaSession.metadata = null;
+        }
+      } catch (e) {}
     }
 
     function resetLocalVideoPos() {
@@ -2900,7 +3082,7 @@
       $('btn-call-speaker').classList.toggle('active', c.speakerOn);
       $('icon-spk-on').classList.toggle('hidden', !c.speakerOn);
       $('icon-spk-off').classList.toggle('hidden', c.speakerOn);
-      $('lbl-call-speaker').textContent = c.speakerOn ? 'Speaker' : 'Earpiece';
+      $('lbl-call-speaker').textContent = c.speakerOn ? 'Speaker' : (c.btDeviceName ? 'Bluetooth' : 'Earpiece');
 
       // Switch Audio <-> Video icon & label
       $('icon-to-video').classList.toggle('hidden', c.isVideo);
@@ -3035,17 +3217,23 @@
       if (state.call.status !== 'IDLE') { toast('Already in a call', 'error'); return; }
       if (!(await waitForFirebase()) || !state.myProfile) return;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo ? { facingMode: 'user' } : false });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: isVideo ? { facingMode: 'user' } : false
+        });
         const callId = 'call_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         const pc = new RTCPeerConnection({ iceServers: getIceServers(), iceCandidatePoolSize: 8 });
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
         state.call = {
           status: 'CALLING', callId, remoteId: cleanId(targetId), isVideo: !!isVideo, isCaller: true,
-          pc, localStream: stream, muted: false, speakerOn: !!isVideo, btDeviceName: state.call.btDeviceName || '',
+          pc, localStream: stream, muted: false, speakerOn: false, btDeviceName: '',
           camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
-          startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
+          startTs: 0, timerId: null, ringTimeoutId: null, wakeLock: null, keepAliveCtx: null, unsubs: []
         };
+
+        await detectBluetoothAudio();
+        if (isVideo && !state.call.btDeviceName) state.call.speakerOn = true;
 
         resetLocalVideoPos();
         if (isVideo) {
@@ -3065,7 +3253,6 @@
           ts: Date.now()
         });
 
-        detectBluetoothAudio();
         applyAudioOutput();
         updateCallUI();
         startRing(false);
@@ -3083,9 +3270,9 @@
     function handleIncomingCallDoc(c) {
       state.call = {
         status: 'RINGING', callId: c._docId, remoteId: cleanId(c.callerId), isVideo: !!c.isVideo, isCaller: false,
-        pc: null, localStream: null, muted: false, speakerOn: !!c.isVideo, btDeviceName: state.call.btDeviceName || '',
+        pc: null, localStream: null, muted: false, speakerOn: false, btDeviceName: '',
         camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
-        startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
+        startTs: 0, timerId: null, ringTimeoutId: null, wakeLock: null, keepAliveCtx: null, unsubs: []
       };
       resetLocalVideoPos();
       detectBluetoothAudio();
@@ -3102,11 +3289,16 @@
         const snap = await getDoc(pubDoc('calls', c.callId));
         if (!snap.exists()) { cleanupCall(); return; }
         const data = snap.data();
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo ? { facingMode: 'user' } : false });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: c.isVideo ? { facingMode: 'user' } : false
+        });
         const pc = new RTCPeerConnection({ iceServers: getIceServers(), iceCandidatePoolSize: 8 });
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
         c.localStream = stream;
         c.pc = pc;
+        await detectBluetoothAudio();
+        c.speakerOn = !!(c.isVideo && !c.btDeviceName);
         if (c.isVideo) {
           $('local-video').srcObject = stream;
           $('local-video').classList.remove('hidden');
@@ -3155,7 +3347,15 @@
       };
       pc.onconnectionstatechange = () => {
         if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          if (state.call.status === 'CONNECTED') toast('Call connection unstable', 'error');
+          if (state.call.status === 'CONNECTED') {
+            try { if (typeof pc.restartIce === 'function') pc.restartIce(); } catch (e) {}
+            toast('Reconnecting call audio...', 'info');
+          }
+        }
+      };
+      pc.oniceconnectionstatechange = () => {
+        if ((pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') && state.call.status === 'CONNECTED') {
+          try { if (typeof pc.restartIce === 'function') pc.restartIce(); } catch (e) {}
         }
       };
     }
@@ -3193,6 +3393,8 @@
       if (c.ringTimeoutId) { clearTimeout(c.ringTimeoutId); c.ringTimeoutId = null; }
       c.status = 'CONNECTED';
       c.startTs = Date.now();
+      const cv = getContactView(c.remoteId);
+      acquireCallKeepAlive(cv.name, c.isVideo);
       detectBluetoothAudio();
       applyAudioOutput();
       updateCallUI();
@@ -3214,6 +3416,7 @@
 
     function cleanupCall() {
       stopRing();
+      releaseCallKeepAlive();
       const c = state.call;
       if (c.timerId) clearInterval(c.timerId);
       if (c.ringTimeoutId) clearTimeout(c.ringTimeoutId);
@@ -3229,9 +3432,9 @@
       $('remote-audio').srcObject = null;
       state.call = {
         status: 'IDLE', callId: null, remoteId: null, isVideo: false, isCaller: false,
-        pc: null, localStream: null, muted: false, speakerOn: false, btDeviceName: c.btDeviceName || '',
+        pc: null, localStream: null, muted: false, speakerOn: false, btDeviceName: '',
         camOff: false, facingMode: 'user', lastRenegSeq: 0, pendingRenegSeq: 0,
-        startTs: 0, timerId: null, ringTimeoutId: null, unsubs: []
+        startTs: 0, timerId: null, ringTimeoutId: null, wakeLock: null, keepAliveCtx: null, unsubs: []
       };
       updateCallUI();
     }
@@ -3360,10 +3563,22 @@
     }
 
     function wireEvents() {
-      // Presence & mobile keyboard viewport pinning
+      // Presence, read receipts, call keep-alive & mobile keyboard viewport pinning
       window.addEventListener('beforeunload', () => { setPresence(false); });
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !state.isLocked && state.myProfile && db && state.fbUser) setPresence(true);
+        if (!document.hidden && !state.isLocked && state.myProfile && db && state.fbUser) {
+          setPresence(true);
+          if (state.activeChatId) markChatAsRead(state.activeChatId);
+        }
+        if (state.call.status === 'CONNECTED') {
+          if ($('remote-audio')?.srcObject) $('remote-audio').play().catch(() => {});
+          if (state.call.keepAliveCtx?.state === 'suspended') state.call.keepAliveCtx.resume().catch(() => {});
+          if (!document.hidden) {
+            const cv = getContactView(state.call.remoteId);
+            acquireCallKeepAlive(cv.name, state.call.isVideo);
+            detectBluetoothAudio();
+          }
+        }
       });
       if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', syncChatViewport);
@@ -3435,7 +3650,7 @@
           toast('Welcome back, ' + prof.name + '!', 'success');
           unlockAndEnterApp();
         } catch (err) {
-          toast('Sign-in failed — check Firestore rules', 'error');
+          toast('Sign in failed — check your connection', 'error');
         }
       });
 
