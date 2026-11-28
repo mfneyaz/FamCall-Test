@@ -18,13 +18,14 @@
        ===================================================================== -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
-     apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
   authDomain: "miv-reservation-system.firebaseapp.com",
   projectId: "miv-reservation-system",
   storageBucket: "miv-reservation-system.firebasestorage.app",
   messagingSenderId: "7639802660",
   appId: "1:7639802660:web:d651f66699ee18466d89b1",
   measurementId: "G-Q8JP66CF9G"
+
     };
   </script>
 
@@ -208,6 +209,7 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
+      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -219,6 +221,11 @@
       overflow: hidden;
       flex-shrink: 0;
       position: relative;
+    }
+    .avatar-wrap {
+      position: relative;
+      display: inline-flex;
+      flex-shrink: 0;
     }
     .avatar img {
       width: 100%;
@@ -536,14 +543,14 @@
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 12px;
-      height: 12px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
       border: 2px solid #081226;
       background: #64748b;
+      z-index: 2;
     }
-    .presence-dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
-
+    .presence-dot.online { background: #10b981; box-shadow: 0 0 10px #10b981, 0 0 4px #34d399; }
     .empty-state {
       border-radius: 18px;
       padding: 26px 18px;
@@ -1163,7 +1170,7 @@
       <div class="splash-bar"><div class="splash-bar-fill"></div></div>
     </div>
     <div class="splash-dev-pill">
-      Developed by <span class="author-name">Mohammad Firoz Alam</span>
+      Application Developed by <span class="author-name">Mohammad Firoz Alam</span>
     </div>
   </div>
 
@@ -1201,6 +1208,7 @@
           <input id="signin-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="••••" autocomplete="current-password" required />
         </div>
         <button type="submit" class="btn btn-cyan" style="width:100%;margin-top:4px;">Sign In &amp; Enter</button>
+        <button id="btn-signin-forgot-pin" type="button" style="font-size:12px;font-weight:700;color:#7dd3fc;padding:4px 0;text-align:center;">Forgot PIN? Reset with Recovery Word</button>
       </form>
 
       <!-- Create Profile Form -->
@@ -1229,6 +1237,10 @@
         <div>
           <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px;">CREATE 4-DIGIT PIN</label>
           <input id="setup-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="••••" required />
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:5px;">RECOVERY SECRET WORD (FOR FORGOT PIN)</label>
+          <input id="setup-recovery" type="text" class="field" placeholder="e.g. Childhood city or pet name" autocomplete="off" />
         </div>
         <button id="btn-create-submit" type="submit" class="btn btn-cyan" style="width:100%;margin-top:4px;">Create Profile &amp; Enter</button>
       </form>
@@ -1269,6 +1281,7 @@
       </div>
 
       <button id="btn-lock-signout" type="button" class="btn btn-ghost" style="width:100%;font-size:12px;padding:9px;">Switch Account / Sign Out</button>
+      <button id="btn-lock-forgot-pin" type="button" style="font-size:11.5px;font-weight:700;color:#7dd3fc;padding:2px 0;">Forgot PIN? Reset here</button>
       <div class="author-credit">Designed by <span class="author-name">Mohammad Firoz Alam</span></div>
     </div>
   </section>
@@ -1383,6 +1396,18 @@
           <div style="display:flex;gap:8px;">
             <input id="input-edit-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="New 4-digit PIN" required />
             <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Update</button>
+          </div>
+        </form>
+
+        <!-- PIN Recovery Secret Word -->
+        <form id="form-edit-recovery" class="glass" style="border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:11px;font-weight:700;color:#94a3b8;">PIN RECOVERY SECRET WORD</span>
+            <span id="recovery-status-pill" style="font-size:10.5px;font-weight:800;color:#fbbf24;">Not Set</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <input id="input-edit-recovery" type="text" class="field" placeholder="Set secret word to recover PIN" autocomplete="off" required />
+            <button type="submit" class="btn btn-cyan" style="flex-shrink:0;">Save</button>
           </div>
         </form>
 
@@ -1679,6 +1704,32 @@
     </div>
   </div>
 
+  <!-- Forgot PIN Recovery Modal -->
+  <div id="forgot-pin-modal" class="modal-backdrop hidden" style="z-index:770;">
+    <form id="form-forgot-pin" class="glass-strong modal-card">
+      <div style="font-size:16px;font-weight:800;">Reset Forgotten PIN</div>
+      <div style="font-size:12px;color:#94a3b8;line-height:1.45;">
+        Enter your Family ID and the Recovery Secret Word you saved in your profile to set a new 4-digit PIN.
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">FAMILY ID</label>
+        <input id="forgot-id" type="text" class="field mono" placeholder="FAM-4821" required />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">RECOVERY SECRET WORD</label>
+        <input id="forgot-word" type="text" class="field" placeholder="Your saved secret word" autocomplete="off" required />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;display:block;margin-bottom:4px;">NEW 4-DIGIT PIN</label>
+        <input id="forgot-new-pin" type="password" inputmode="numeric" maxlength="4" class="field mono" placeholder="••••" required />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:2px;">
+        <button id="btn-forgot-cancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button type="submit" class="btn btn-cyan">Reset PIN</button>
+      </div>
+    </form>
+  </div>
+
   <!-- ==================== 7. APPLICATION MODULE ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1733,6 +1784,10 @@
         h = Math.imul(h, 16777619);
       }
       return (h >>> 0).toString(16);
+    }
+    function hashRecovery(word) {
+      const clean = String(word || '').trim().toLowerCase();
+      return clean ? fnv1aHex('famcall-rec::' + clean) : '';
     }
     async function verifyPin(pin, prof) {
       if (!prof) return { ok: false, migrated: false };
@@ -2517,8 +2572,10 @@
         card.className = 'contact-card';
         card.dataset.openChat = c.id;
         card.innerHTML = `
-          <div class="avatar" style="width:46px;height:46px;">
-            ${c.avatar ? `<img src="${c.avatar}" alt="" />` : esc(initials(c.name))}
+          <div class="avatar-wrap">
+            <div class="avatar" style="width:46px;height:46px;">
+              ${c.avatar ? `<img src="${c.avatar}" alt="" />` : esc(initials(c.name))}
+            </div>
             <span class="presence-dot ${c.online ? 'online' : ''}"></span>
           </div>
           <div style="flex:1;min-width:0;">
@@ -2657,6 +2714,10 @@
       setAvatar($('header-avatar-btn'), p.avatar, p.name);
       setAvatar($('profile-avatar'), p.avatar, p.name);
       if ($('btn-remove-my-photo')) $('btn-remove-my-photo').classList.toggle('hidden', !p.avatar);
+      if ($('recovery-status-pill')) {
+        $('recovery-status-pill').textContent = p.recoveryHash ? 'Active ✓' : 'Not Set';
+        $('recovery-status-pill').style.color = p.recoveryHash ? '#34d399' : '#fbbf24';
+      }
       if ($('btn-toggle-ring')) $('btn-toggle-ring').textContent = state.ringtoneEnabled ? 'ON' : 'OFF';
       if ($('turn-url')) $('turn-url').value = state.customTurn.url || '';
       if ($('turn-user')) $('turn-user').value = state.customTurn.username || '';
@@ -3796,8 +3857,9 @@
         try {
           const existing = await getDoc(pubDoc('profiles', id));
           if (existing.exists()) { toast('ID already exists — Sign In or tap Auto', 'error'); return; }
+          const recHash = hashRecovery($('setup-recovery')?.value || '');
           const profile = {
-            id, name, pinHash: hashPin(pin), avatar: state.setupPhotoData || '',
+            id, name, pinHash: hashPin(pin), recoveryHash: recHash, avatar: state.setupPhotoData || '',
             online: true, lastSeen: Date.now(), createdAt: Date.now()
           };
           await setDoc(pubDoc('profiles', id), profile);
@@ -3822,6 +3884,58 @@
         else pushPinDigit(k);
       });
       on('btn-lock-signout', 'click', () => signOutToAuth('Signed out'));
+
+      // Forgot PIN Modal Handlers
+      const openForgotModal = (prefillId) => {
+        $('forgot-id').value = prefillId || cleanId($('signin-id')?.value || '') || (state.myProfile?.id || '');
+        $('forgot-word').value = '';
+        $('forgot-new-pin').value = '';
+        $('forgot-pin-modal').classList.remove('hidden');
+      };
+      on('btn-signin-forgot-pin', 'click', () => openForgotModal());
+      on('btn-lock-forgot-pin', 'click', () => openForgotModal(state.myProfile?.id || ''));
+      on('btn-forgot-cancel', 'click', () => $('forgot-pin-modal').classList.add('hidden'));
+      on('form-forgot-pin', 'submit', async (e) => {
+        e.preventDefault();
+        const id = cleanId($('forgot-id').value);
+        const word = $('forgot-word').value.trim();
+        const newPin = $('forgot-new-pin').value.trim();
+        if (!id || !word || !/^\d{4}$/.test(newPin)) {
+          toast('Enter Family ID, Recovery Word, and a new 4-digit PIN', 'error');
+          return;
+        }
+        if (!(await waitForFirebase())) return;
+        try {
+          const snap = await getDoc(pubDoc('profiles', id));
+          if (!snap.exists()) { toast('Family ID not found', 'error'); return; }
+          const prof = snap.data();
+          if (!prof.recoveryHash) {
+            toast('No Recovery Word set for this ID — ask Admin to reset in Firebase Console', 'error');
+            return;
+          }
+          if (prof.recoveryHash !== hashRecovery(word)) {
+            toast('Incorrect Recovery Secret Word', 'error');
+            return;
+          }
+          const newHash = hashPin(newPin);
+          await updateDoc(pubDoc('profiles', id), { pinHash: newHash });
+          $('forgot-pin-modal').classList.add('hidden');
+          if (state.myProfile && state.myProfile.id === id) {
+            state.myProfile.pinHash = newHash;
+            state.sessionPlainPin = newPin;
+            saveRememberedProfile(state.myProfile);
+            await ensureUserE2EEKeys(state.myProfile, newPin);
+            toast('PIN reset! Unlocking app...', 'success');
+            unlockAndEnterApp();
+          } else {
+            $('signin-id').value = id;
+            $('signin-pin').value = newPin;
+            toast('PIN reset successfully! Tap Sign In & Enter.', 'success');
+          }
+        } catch (err) {
+          toast('Could not reset PIN — check connection', 'error');
+        }
+      });
 
       // Header Actions
       on('header-avatar-btn', 'click', () => switchTab('profile'));
@@ -3968,6 +4082,22 @@
         await updateDoc(pubDoc('profiles', state.myProfile.id), patch);
         $('input-edit-pin').value = '';
         toast('PIN & E2EE key updated!', 'success');
+      });
+
+      on('form-edit-recovery', 'submit', async (e) => {
+        e.preventDefault();
+        const word = $('input-edit-recovery').value.trim();
+        if (word.length < 3 || !state.myProfile || !(await waitForFirebase())) {
+          toast('Enter a Recovery Word (at least 3 characters)', 'error');
+          return;
+        }
+        const recHash = hashRecovery(word);
+        state.myProfile.recoveryHash = recHash;
+        saveRememberedProfile(state.myProfile);
+        await updateDoc(pubDoc('profiles', state.myProfile.id), { recoveryHash: recHash });
+        $('input-edit-recovery').value = '';
+        renderProfile();
+        toast('PIN Recovery Secret Word saved!', 'success');
       });
 
       on('btn-test-ring', 'click', () => { playRingToneBurst(); toast('Playing ringtone preview', 'info'); });
