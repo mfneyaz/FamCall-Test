@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FamCall HUD" />
-  <title>FamCall HUD — Family Connect</title>
+  <title>Family Connect — Developed by Mohammad Firoz Alam</title>
   <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="" />
   <link id="apple-touch-icon" rel="apple-touch-icon" href="" />
   <link id="dynamic-manifest" rel="manifest" href="./manifest.json" />
@@ -18,14 +18,13 @@
        ===================================================================== -->
   <script>
     window.FAMCALL_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
+       apiKey: "AIzaSyBOu8aseoFgGdP7xW9C4MYE1e1HFhvpTTM",
   authDomain: "miv-reservation-system.firebaseapp.com",
   projectId: "miv-reservation-system",
   storageBucket: "miv-reservation-system.firebasestorage.app",
   messagingSenderId: "7639802660",
   appId: "1:7639802660:web:d651f66699ee18466d89b1",
   measurementId: "G-Q8JP66CF9G"
-
     };
   </script>
 
@@ -1170,7 +1169,7 @@
       <div class="splash-bar"><div class="splash-bar-fill"></div></div>
     </div>
     <div class="splash-dev-pill">
-      Application Developed by <span class="author-name">Mohammad Firoz Alam</span>
+      Developed by <span class="author-name">Mohammad Firoz Alam</span>
     </div>
   </div>
 
@@ -2072,7 +2071,8 @@
             if (cached && cached.id === prof.id && cached.jwk) privJwk = cached.jwk;
           } catch (e) {}
         }
-        if (!privJwk) {
+        // Only generate a new ECDH keypair if the user does not already have one on Firestore
+        if (!privJwk && !prof.pubKeyJwk) {
           const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
           privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
           const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
@@ -2083,37 +2083,20 @@
           if (db && state.fbUser) await updateDoc(pubDoc('profiles', prof.id), patch).catch(() => {});
           saveRememberedProfile(prof);
         }
-        const privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
-        state.e2ee.privateKey = privateKey;
-        state.e2ee.privateKeyJwk = privJwk;
-        state.e2ee.ready = true;
-        try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
+        if (privJwk) {
+          const privateKey = await crypto.subtle.importKey('jwk', privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
+          state.e2ee.privateKey = privateKey;
+          state.e2ee.privateKeyJwk = privJwk;
+          state.e2ee.ready = true;
+          try { localStorage.setItem(LS_E2EE_JWK_KEY, JSON.stringify({ id: prof.id, jwk: privJwk })); } catch (e) {}
+        }
       } catch (e) {
         console.warn('E2EE init fallback:', e);
       }
     }
-    async function getSharedAesKey(peerId) {
+    async function getPairAesKey(peerId) {
       if (!hasWebCrypto || !state.myProfile) return null;
-      const pid = cleanId(peerId);
-      const peerProf = state.profilesMap[pid];
-      if (state.e2ee.ready && state.e2ee.privateKey && peerProf && peerProf.pubKeyJwk) {
-        const cacheKey = pid + ':' + (peerProf.pubKeyJwk.x || '');
-        if (state.e2ee.sharedKeys.has(cacheKey)) return state.e2ee.sharedKeys.get(cacheKey);
-        try {
-          const peerPub = await crypto.subtle.importKey('jwk', peerProf.pubKeyJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
-          const aes = await crypto.subtle.deriveKey(
-            { name: 'ECDH', public: peerPub },
-            state.e2ee.privateKey,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt', 'decrypt']
-          );
-          state.e2ee.sharedKeys.set(cacheKey, aes);
-          return aes;
-        } catch (e) {}
-      }
-      // Deterministic pair-key fallback if peer has not published ECDH key yet
-      const pair = makePairId(state.myProfile.id, pid);
+      const pair = makePairId(state.myProfile.id, cleanId(peerId));
       if (state.e2ee.pairKeys.has(pair)) return state.e2ee.pairKeys.get(pair);
       try {
         const raw = await crypto.subtle.digest('SHA-256', textEnc.encode('famcall-pair-aes::' + pair));
@@ -2122,40 +2105,69 @@
         return aes;
       } catch (e) { return null; }
     }
+    async function getEcdhAesKey(peerId) {
+      if (!hasWebCrypto || !state.myProfile || !state.e2ee.ready || !state.e2ee.privateKey) return null;
+      const pid = cleanId(peerId);
+      const peerProf = state.profilesMap[pid];
+      if (!peerProf || !peerProf.pubKeyJwk) return null;
+      const cacheKey = pid + ':' + (peerProf.pubKeyJwk.x || '');
+      if (state.e2ee.sharedKeys.has(cacheKey)) return state.e2ee.sharedKeys.get(cacheKey);
+      try {
+        const peerPub = await crypto.subtle.importKey('jwk', peerProf.pubKeyJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+        const aes = await crypto.subtle.deriveKey(
+          { name: 'ECDH', public: peerPub },
+          state.e2ee.privateKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+        state.e2ee.sharedKeys.set(cacheKey, aes);
+        return aes;
+      } catch (e) { return null; }
+    }
     async function encryptMessagePayload(peerId, payloadObj) {
-      const aes = await getSharedAesKey(peerId);
+      // Use deterministic AES-256-GCM pair key (with random 96-bit IV per message)
+      // so chats stay encrypted in Firestore and never break across devices, reloads, or PIN resets.
+      const aes = await getPairAesKey(peerId);
       if (!aes) return null;
       try {
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, textEnc.encode(JSON.stringify(payloadObj)));
-        const peerProf = state.profilesMap[cleanId(peerId)];
-        return { enc: true, e2eeVer: (state.e2ee.ready && peerProf?.pubKeyJwk) ? 2 : 1, iv: b64Enc(iv), ct: b64Enc(ct) };
+        return { enc: true, e2eeVer: 1, iv: b64Enc(iv), ct: b64Enc(ct) };
       } catch (e) { return null; }
     }
     async function decryptMessageDoc(docId, raw) {
-      if (!raw || !raw.enc || !raw.iv || !raw.ct) return { ...raw, _docId: docId };
+      if (!raw) return { _docId: docId };
+      // Support both flat ({ iv, ct }) and nested ({ enc: { iv, ct } }) or legacy ciphertext schemas
+      const encObj = (raw.enc && typeof raw.enc === 'object') ? raw.enc : raw;
+      const ivStr = encObj.iv || '';
+      const ctStr = encObj.ct || encObj.ciphertext || encObj.data || encObj.payload || '';
+      const isEncrypted = !!(ivStr && ctStr && (raw.enc || raw.e2ee || raw.encrypted || raw.e2eeVer));
+
+      if (!isEncrypted) {
+        const plainText = raw.text ?? raw.message ?? raw.body ?? raw.msg ?? raw.content ?? '';
+        return { ...raw, text: plainText, _docId: docId };
+      }
       if (state.decryptedCache.has(docId)) {
         return { ...raw, ...state.decryptedCache.get(docId), _docId: docId };
       }
+
       const myId = state.myProfile?.id;
-      const peerId = raw.fromId === myId ? raw.toId : raw.fromId;
-      try {
-        let aes = null;
-        if (raw.e2eeVer === 1) {
-          const pair = makePairId(myId, peerId);
-          const rawKey = await crypto.subtle.digest('SHA-256', textEnc.encode('famcall-pair-aes::' + pair));
-          aes = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-        } else {
-          aes = await getSharedAesKey(peerId);
-        }
-        if (aes) {
-          const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64Dec(raw.iv) }, aes, b64Dec(raw.ct));
+      const peerId = cleanId(raw.fromId) === myId ? raw.toId : raw.fromId;
+      const keysToTry = raw.e2eeVer === 2
+        ? [await getEcdhAesKey(peerId), await getPairAesKey(peerId)]
+        : [await getPairAesKey(peerId), await getEcdhAesKey(peerId)];
+
+      for (const aes of keysToTry) {
+        if (!aes) continue;
+        try {
+          const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64Dec(ivStr) }, aes, b64Dec(ctStr));
           const parsed = JSON.parse(textDec.decode(pt));
           state.decryptedCache.set(docId, parsed);
           return { ...raw, ...parsed, _docId: docId };
-        }
-      } catch (e) {}
-      return { ...raw, text: '🔒 Encrypted message (re-syncing key...)', _pendingDecrypt: true, _docId: docId };
+        } catch (e) {}
+      }
+      return { ...raw, text: '🔒 Encrypted with a previous device key', _pendingDecrypt: true, _docId: docId };
     }
 
     /* ---------- 5. LOUD MELODIC RINGTONE SYNTHESIZER ---------- */
@@ -2402,7 +2414,7 @@
             state.myProfile = { ...state.myProfile, ...next };
             saveRememberedProfile(state.myProfile);
             renderProfile();
-          } else if (next.pubKeyJwk && (!prev || !prev.pubKeyJwk)) {
+          } else if (next.pubKeyJwk && (!prev || !prev.pubKeyJwk || prev.pubKeyJwk.x !== next.pubKeyJwk.x)) {
             keyChangedPeers.push(cleanId(d.id));
           }
         });
@@ -2482,7 +2494,7 @@
             state.rawMsgById.delete(d.id);
             state.decryptedCache.delete(d.id);
           } else {
-            state.rawMsgById.set(d.id, { ...data, _docId: d.id });
+            state.rawMsgById.set(d.id, data);
             if (cleanId(data.toId) === myId && !data.delivered) toDeliver.push(d.id);
           }
         });
@@ -2852,7 +2864,10 @@
           </div>
         `;
       } else {
-        bodyHtml = `<div>${esc(m.text || '')}</div>`;
+        const txt = m.text || m.message || m.body || m.msg || '';
+        bodyHtml = txt
+          ? `<div>${esc(txt)}</div>`
+          : `<div style="font-size:12px;color:#94a3b8;font-style:italic;">🔒 Encrypted with an older version</div>`;
       }
 
       const tickHtml = !fromMe ? ''
